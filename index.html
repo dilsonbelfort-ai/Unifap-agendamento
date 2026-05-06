@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIFAP Esportes — Agendamento</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans','Segoe UI',sans-serif;background:#F7F7F5;color:#333;min-height:100vh}
+.header{background:linear-gradient(135deg,#003B2E 0%,#006B50 50%,#00916E 100%);padding:20px 32px;color:#fff}
+.header-row{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.header-left{display:flex;align-items:center;gap:14px}
+.header-logo{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
+.header-title{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.header-sub{font-size:12px;opacity:.75;margin-top:2px}
+.admin-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+.admin-btn:hover{background:rgba(255,255,255,.25)}
+.admin-btn.logged{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.5)}
+.container{max-width:1100px;margin:0 auto;padding:0 20px}
+.status-bar{padding:12px 0 0;display:flex;align-items:center;gap:8px}
+.status-dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+.status-online{background:#2D8A4E}
+.status-offline{background:#E05050}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-text{font-size:12px;color:#888}
+.space-selector{display:flex;gap:10px;padding:16px 0 0;overflow-x:auto}
+.space-btn{flex:1 1 0;min-width:140px;padding:14px 16px;border-radius:14px;border:2px solid #E8E8E4;background:#fff;cursor:pointer;text-align:left;transition:.2s;font-family:inherit}
+.space-btn.active{transform:scale(1)}.space-btn:not(.active){transform:scale(.98)}
+.space-icon{font-size:20px;margin-bottom:4px}
+.space-name{font-size:14px;font-weight:600;margin-bottom:2px}
+.space-info{font-size:11px;color:#888}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 0;flex-wrap:wrap;gap:10px}
+.nav-left{display:flex;align-items:center;gap:8px}
+.nav-btn{width:34px;height:34px;border-radius:8px;border:1px solid #DDD;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.15s;font-family:inherit;color:#555}
+.nav-btn:hover{background:#F0F0EE;border-color:#BBB}
+.nav-title{font-size:16px;font-weight:700;min-width:200px;text-align:center}
+.nav-today{font-size:12px;font-weight:600;padding:6px 14px;border-radius:8px;border:1px solid #DDD;background:#fff;cursor:pointer;font-family:inherit;color:#555;transition:.15s}
+.nav-today:hover{background:#F0F0EE}
+.view-toggle{display:flex;gap:4px;background:#EDEDEA;border-radius:8px;padding:3px}
+.view-btn{font-size:12px;font-weight:500;padding:5px 14px;border-radius:6px;border:none;background:transparent;color:#888;cursor:pointer;font-family:inherit;transition:.15s}
+.view-btn.active{background:#fff;color:#333;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.stats{display:flex;gap:10px;padding:14px 0 0;flex-wrap:wrap}
+.stat-card{flex:1 1 130px;background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #E8E8E4}
+.stat-label{font-size:11px;color:#888;font-weight:500}
+.stat-value{font-size:20px;font-weight:700}
+.stat-sub{font-size:11px;color:#aaa;margin-top:3px}
+.stat-bar{height:4px;border-radius:2px;background:#EEE;margin-top:6px;overflow:hidden}
+.stat-bar-fill{height:100%;border-radius:2px;transition:width .4s}
+.grid-wrap{padding:12px 0 20px;overflow-x:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:720px;table-layout:fixed}
+th{padding:8px 4px;font-weight:500}
+th.hour-col{width:56px;font-size:11px;color:#aaa;text-align:left}
+th .day-label{font-size:11px;color:#aaa}
+th .day-num{font-size:15px;font-weight:600;color:#333}
+th .day-today .day-num{color:#fff;background:#006B50;border-radius:50%;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center}
+td{padding:2px;vertical-align:top}
+td.hour-cell{font-size:11px;color:#999;font-weight:500;padding-top:8px}
+.slot-empty{background:#FAFAF8;border:1px dashed #DDD;border-radius:8px;min-height:34px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center}
+.slot-empty:hover{border-style:solid}
+.slot-empty span{font-size:16px;color:#CCC}
+.slot-booked{border-radius:8px;padding:5px 7px;cursor:pointer;min-height:34px;transition:.15s}
+.slot-booked:hover{opacity:.85}
+.slot-booked-name{font-size:10px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot-booked-id{font-size:9px;color:#999;margin-top:1px}
+.slot-blocked{background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 4px,#e8e8e4 4px,#e8e8e4 8px);border:1px solid #DDDDD8;border-radius:8px;min-height:34px;display:flex;align-items:center;justify-content:center;cursor:default}
+.slot-blocked span{font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.03em}
+.monthly-grid{padding:12px 0 20px}
+.monthly-header{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.monthly-header div{text-align:center;font-size:11px;font-weight:600;color:#999;padding:8px 0}
+.monthly-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.monthly-day{background:#fff;border:1px solid #E8E8E4;border-radius:10px;min-height:80px;padding:8px;cursor:pointer;transition:.15s;position:relative}
+.monthly-day:hover{border-color:#BBB;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.monthly-day.other-month{opacity:.35;pointer-events:none}
+.monthly-day.today{border-color:#006B50;border-width:2px}
+.monthly-day-num{font-size:13px;font-weight:600;margin-bottom:4px}
+.monthly-day-count{font-size:10px;font-weight:500;padding:2px 6px;border-radius:10px;display:inline-block}
+.monthly-day-blocked{font-size:9px;color:#888;margin-top:3px;font-weight:500}
+.legend{padding:0 0 20px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-box{width:14px;height:14px;border-radius:4px}
+.legend-text{font-size:11px;color:#999}
+.list-wrap{padding:12px 0 24px}
+.list-empty{text-align:center;padding:40px;color:#aaa;font-size:14px}
+.list-item{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #E8E8E4;margin-bottom:8px}
+.list-date{width:44px;height:44px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.list-date-day{font-size:10px;font-weight:600}
+.list-date-hour{font-size:12px;font-weight:700}
+.list-info{flex:1;min-width:0}
+.list-info-name{font-size:14px;font-weight:600}
+.list-info-id{font-size:12px;color:#999}
+.cancel-btn{font-size:11px;font-weight:500;color:#E05050;background:#FEF0F0;border:1px solid #FDDDDD;border-radius:8px;padding:6px 12px;cursor:pointer;font-family:inherit}
+.cancel-btn:hover{background:#FDE0E0}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:420px;box-shadow:0 24px 48px rgba(0,0,0,.18);overflow:hidden;animation:modalIn .25s ease-out;max-height:90vh;overflow-y:auto}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:none}}
+.modal-header{padding:20px 24px;border-bottom:1px solid #EEE}
+.modal-title{font-size:17px;font-weight:700}
+.modal-sub{font-size:13px;color:#888;margin-top:2px}
+.modal-body{padding:20px 24px}
+.form-label{font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px}
+.tipo-btns{display:flex;gap:8px;margin-bottom:16px}
+.tipo-btn{flex:1;font-size:12px;font-weight:500;padding:8px 0;border-radius:8px;border:1px solid #DDD;background:#fff;color:#666;cursor:pointer;font-family:inherit;transition:.15s}
+.tipo-btn.active{border-width:2px}
+.form-input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid #DDD;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:#006B50}
+.submit-btn{width:100%;padding:12px 0;border-radius:10px;border:none;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s}
+.submit-btn:disabled{background:#CCC!important;cursor:default}
+.submit-btn:not(:disabled):hover{opacity:.9}
+.admin-section{margin-top:18px;padding-top:18px;border-top:1px solid #EEE}
+.admin-section-title{font-size:14px;font-weight:700;margin-bottom:12px;color:#333}
+.admin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;gap:10px}
+.admin-row label{font-size:13px;color:#555}
+.admin-toggle{width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:.2s;padding:0}
+.admin-toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.admin-toggle.on{background:#006B50}.admin-toggle.on::after{left:23px}
+.admin-toggle.off{background:#CCC}
+.toast{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:2000;max-width:90%;text-align:center;animation:slideUp .3s ease-out}
+.toast.show{display:block}
+@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.footer{text-align:center;padding:16px 0 32px;font-size:11px;color:#BBB}
+.loading-screen{position:fixed;inset:0;background:#F7F7F5;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+.loading-spinner{width:40px;height:40px;border:3px solid #E8E8E4;border-top-color:#006B50;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:16px;font-size:14px;color:#888;font-family:'DM Sans',sans-serif}
+@media(max-width:640px){.header{padding:16px}.container{padding:0 12px}.space-btn{min-width:120px;padding:10px 12px}.nav-title{min-width:auto;font-size:14px}.monthly-day{min-height:60px;padding:6px}}
+</style>
+</head>
+<body>
+<div class="loading-screen" id="loadingScreen"><div class="loading-spinner"></div><div class="loading-text">Conectando ao servidor...</div></div>
+<div id="mainApp" style="display:none">
+<div class="header"><div class="header-row"><div class="header-left"><div class="header-logo">U</div><div><div class="header-title">UNIFAP Esportes</div><div class="header-sub">Sistema de Agendamento de Espaços Esportivos</div></div></div><button class="admin-btn" id="adminToggle" onclick="openAdminModal()">Administrador</button></div></div>
+<div class="container">
+<div class="status-bar" id="statusBar"><div class="status-dot status-online"></div><span class="status-text">Conectado — dados em tempo real</span></div>
+<div class="space-selector" id="spaceSelector"></div>
+<div class="nav-bar"><div class="nav-left"><button class="nav-btn" onclick="navPrev()">&#8249;</button><div class="nav-title" id="navTitle"></div><button class="nav-btn" onclick="navNext()">&#8250;</button><button class="nav-today" onclick="navToday()">Hoje</button></div><div style="display:flex;gap:8px;align-items:center"><div class="view-toggle"><button class="view-btn active" onclick="setView('week')">Semana</button><button class="view-btn" onclick="setView('month')">Mês</button><button class="view-btn" onclick="setView('list')">Lista</button></div></div></div>
+<div class="stats" id="statsBar"></div>
+<div id="weekView" class="grid-wrap"></div>
+<div id="monthView" class="monthly-grid" style="display:none"></div>
+<div id="listView" class="list-wrap" style="display:none"></div>
+<div class="legend" id="legend"></div>
+</div>
+<div class="footer">UNIFAP — Universidade Federal do Amapá · Sistema de Agendamento Esportivo</div>
+</div>
+<div class="modal-overlay" id="bookingModal" onclick="closeBooking()"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><div class="modal-title">Nova reserva</div><div class="modal-sub" id="bookingSub"></div></div><div class="modal-body"><div class="form-label">Tipo de usuário</div><div class="tipo-btns" id="tipoBtns"></div><label class="form-label" for="inputNome">Nome completo</label><input class="form-input" id="inputNome" placeholder="Digite seu nome" style="margin-bottom:14px"><label class="form-label" for="inputMat">Matrícula / Identificação</label><input class="form-input" id="inputMat" placeholder="Ex: 2024001234" style="margin-bottom:16px"><div style="background:#E8F4FD;border:1px solid #B8DCF0;border-radius:10px;padding:12px 14px;margin-bottom:20px"><div style="font-size:12px;font-weight:600;color:#0077B6;margin-bottom:4px">&#128231; Precisa enviar ofício?</div><div style="font-size:12px;color:#555;line-height:1.5">Envie o documento por e-mail para:<br><a href="mailto:dilsonbelfort@gmail.com" style="color:#006B50;font-weight:700;text-decoration:none">dilsonbelfort@gmail.com</a></div></div><button class="submit-btn" id="submitBtn" onclick="confirmBooking()" disabled>Confirmar reserva</button></div></div></div>
+<div class="modal-overlay" id="adminModal" onclick="closeAdmin()"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><div class="modal-title" id="adminTitle">Painel do Administrador</div><div class="modal-sub" id="adminSubtitle">Faça login para gerenciar o sistema</div></div><div class="modal-body" id="adminBody"></div></div></div>
+<div class="modal-overlay" id="dayModal" onclick="closeDayModal()"><div class="modal" onclick="event.stopPropagation()"><div class="modal-header"><div class="modal-title" id="dayModalTitle"></div><div class="modal-sub" id="dayModalSub"></div></div><div class="modal-body" id="dayModalBody" style="max-height:50vh;overflow-y:auto"></div></div></div>
+<div class="toast" id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyCDhNdYmzF2GZa9JdcgT4LVf_KKw_irk8M",authDomain:"unifap-agendamento.firebaseapp.com",databaseURL:"https://unifap-agendamento-default-rtdb.firebaseio.com",projectId:"unifap-agendamento",storageBucket:"unifap-agendamento.firebasestorage.app",messagingSenderId:"172401509466",appId:"1:172401509466:web:d0ef2dd7a066e72c334463",measurementId:"G-B8RPE2JR5M"};
+const FIREBASE_CONFIGURED=firebaseConfig.apiKey!=="SUA_API_KEY_AQUI";
+let db=null,firebaseReady=false;
+if(FIREBASE_CONFIGURED){try{firebase.initializeApp(firebaseConfig);db=firebase.database();firebaseReady=true;}catch(e){console.error("Erro Firebase:",e);}}
+const ADMIN_PASSWORD="unifap2024";
+const SPACES=[{id:"quadra",name:"Quadra Poliesportiva",icon:"\u25C6",color:"#2D8A4E",light:"#E8F5EC",cap:"20 pessoas",hours:"7h\u201323h",min:7,max:22},{id:"pista",name:"Pista de Atletismo",icon:"\u2192",color:"#E07A1E",light:"#FFF3E6",cap:"Livre",hours:"5h\u201323h",min:5,max:22},{id:"piscina",name:"Piscina",icon:"~",color:"#0077B6",light:"#E8F4FD",cap:"30 pessoas",hours:"6h\u201323h",min:6,max:22}];
+const MONTHS=["Janeiro","Fevereiro","Mar\u00e7o","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DAYS_SHORT=["Seg","Ter","Qua","Qui","Sex","S\u00e1b","Dom"];
+const DAYS_FULL=["Segunda","Ter\u00e7a","Quarta","Quinta","Sexta","S\u00e1bado","Domingo"];
+let selectedSpace="quadra",currentView="week",isAdmin=false,today=new Date(),viewDate=new Date(),modalData=null,formTipo="aluno";
+let blockedSlots={
+  piscina:{morningBlock:true,morningLabel:"Ed. F\u00edsica",morningStart:6,morningEnd:12,extraBlocks:[{label:"Nata\u00e7\u00e3o/Hidro (Proespol)",days:[0,1,2,3,4],startHour:17,endHour:21}]},
+  pista:{morningBlock:true,morningLabel:"Ed. F\u00edsica",morningStart:5,morningEnd:12,extraBlocks:[{label:"Viva Atletismo Ol\u00edmp./Paral.",days:[0,2],startHour:15,endHour:17},{label:"Proj. Viva Atletismo",days:[3],startHour:15,endHour:17}]},
+  quadra:{morningBlock:true,morningLabel:"Ed. F\u00edsica",morningStart:7,morningEnd:11,extraBlocks:[{label:"Inic. Esportiva Inf. (Proespol)",days:[1,3],startHour:14,endHour:18},{label:"Voleibol (Proespol)",days:[1,3],startHour:18,endHour:20},{label:"Treinamento Funcional",days:[0],startHour:17,endHour:19},{label:"Treinamento Funcional",days:[2,4],startHour:16,endHour:18},{label:"Voleibol (Proespol)",days:[4],startHour:18,endHour:21},{label:"Voleibol (Proespol)",days:[5],startHour:13,endHour:16}]}
+};
+let bookings={piscina:{},pista:{},quadra:{}};
+function initFirebaseListeners(){if(!firebaseReady)return;SPACES.forEach(sp=>{db.ref("bookings/"+sp.id).on("value",snapshot=>{const data=snapshot.val();bookings[sp.id]={};if(data){Object.keys(data).forEach(dk=>{const ds=dk.replace(/_/g,"-");bookings[sp.id][ds]={};Object.keys(data[dk]).forEach(hk=>{const h=hk.replace(/_/g,":");bookings[sp.id][ds][h]=data[dk][hk];});});}render();});});db.ref("config/blockedSlots").on("value",snapshot=>{const data=snapshot.val();if(data)blockedSlots=data;render();});db.ref(".info/connected").on("value",snap=>{const bar=document.getElementById("statusBar");if(snap.val()===true){bar.innerHTML='<div class="status-dot status-online"></div><span class="status-text">Conectado \u2014 dados em tempo real</span>';}else{bar.innerHTML='<div class="status-dot status-offline"></div><span class="status-text">Desconectado \u2014 reconectando...</span>';}});}
+function fbDateKey(d){return d.replace(/-/g,"_");}
+function fbHourKey(h){return h.replace(/:/g,"_");}
+function fbSaveBooking(sid,ds,h,data){if(!firebaseReady){if(!bookings[sid][ds])bookings[sid][ds]={};bookings[sid][ds][h]=data;render();return;}db.ref("bookings/"+sid+"/"+fbDateKey(ds)+"/"+fbHourKey(h)).set(data);}
+function fbRemoveBooking(sid,ds,h){if(!firebaseReady){if(bookings[sid][ds]){delete bookings[sid][ds][h];if(Object.keys(bookings[sid][ds]).length===0)delete bookings[sid][ds];}render();return;}db.ref("bookings/"+sid+"/"+fbDateKey(ds)+"/"+fbHourKey(h)).remove();}
+function fbSaveBlockedConfig(){if(!firebaseReady){render();return;}db.ref("config/blockedSlots").set(blockedSlots);}
+function fmtDate(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function getMonday(d){const x=new Date(d);const day=x.getDay();x.setDate(x.getDate()-(day===0?6:day-1));x.setHours(0,0,0,0);return x;}
+function getSpace(){return SPACES.find(s=>s.id===selectedSpace);}
+function getHours(sp){const s=SPACES.find(x=>x.id===(sp||selectedSpace));const arr=[];for(let h=s.min;h<=s.max;h++)arr.push((h<10?"0":"")+h+":00");return arr;}
+function isBlocked(sid,dow,hour){const blk=blockedSlots[sid];if(!blk)return false;const hr=parseInt(hour);if(blk.morningBlock&&dow<6&&hr>=blk.morningStart&&hr<blk.morningEnd)return true;if(blk.extraBlocks){for(const eb of blk.extraBlocks){if(eb.days.includes(dow)&&hr>=eb.startHour&&hr<eb.endHour)return true;}}return false;}
+function getBlockedLabel(sid,dow,hour){const blk=blockedSlots[sid];if(!blk)return"Bloqueado";if(dow!==undefined&&hour!==undefined){const hr=parseInt(hour);if(blk.morningBlock&&dow<6&&hr>=blk.morningStart&&hr<blk.morningEnd)return blk.morningLabel||"Ed. F\u00edsica";if(blk.extraBlocks){for(const eb of blk.extraBlocks){if(eb.days.includes(dow)&&hr>=eb.startHour&&hr<eb.endHour)return eb.label;}}}return blk.morningLabel||"Bloqueado";}
+function dayOfWeekFromDate(ds){const d=new Date(ds+"T12:00:00");const dow=d.getDay();return dow===0?6:dow-1;}
+function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove("show"),3000);}
+function navPrev(){if(currentView==="week")viewDate.setDate(viewDate.getDate()-7);else viewDate.setMonth(viewDate.getMonth()-1);render();}
+function navNext(){if(currentView==="week")viewDate.setDate(viewDate.getDate()+7);else viewDate.setMonth(viewDate.getMonth()+1);render();}
+function navToday(){viewDate=new Date();render();}
+function setView(v){currentView=v;render();}
+function selectSpace(id){selectedSpace=id;render();}
+function openBooking(ds,hour){const dow=dayOfWeekFromDate(ds);if(isBlocked(selectedSpace,dow,hour))return;if(bookings[selectedSpace][ds]?.[hour])return;modalData={dateStr:ds,hour:hour};formTipo="aluno";document.getElementById("inputNome").value="";document.getElementById("inputMat").value="";const s=getSpace();const d=new Date(ds+"T12:00:00");const dow2=d.getDay()===0?6:d.getDay()-1;document.getElementById("bookingSub").textContent=s.name+" \u00b7 "+DAYS_FULL[dow2]+", "+d.getDate()+" de "+MONTHS[d.getMonth()]+" \u00b7 "+hour;document.getElementById("submitBtn").style.background=s.color;document.getElementById("submitBtn").disabled=true;renderTipoBtns();document.getElementById("bookingModal").classList.add("open");setTimeout(()=>document.getElementById("inputNome").focus(),150);}
+function closeBooking(){document.getElementById("bookingModal").classList.remove("open");modalData=null;}
+function renderTipoBtns(){const s=getSpace();const c=document.getElementById("tipoBtns");c.innerHTML="";[["aluno","Aluno"],["servidor","Servidor"],["comunidade","Comunidade"]].forEach(([v,l])=>{const b=document.createElement("button");b.className="tipo-btn"+(formTipo===v?" active":"");b.textContent=l;if(formTipo===v){b.style.borderColor=s.color;b.style.background=s.light;b.style.color=s.color;b.style.borderWidth="2px";}b.onclick=()=>{formTipo=v;renderTipoBtns();};c.appendChild(b);});}
+function checkForm(){const n=document.getElementById("inputNome").value.trim();const m=document.getElementById("inputMat").value.trim();document.getElementById("submitBtn").disabled=!(n&&m);}
+function confirmBooking(){const n=document.getElementById("inputNome").value.trim();const m=document.getElementById("inputMat").value.trim();if(!n||!m||!modalData)return;fbSaveBooking(selectedSpace,modalData.dateStr,modalData.hour,{nome:n,mat:m,tipo:formTipo,timestamp:Date.now()});showToast("Reserva confirmada!");closeBooking();}
+function cancelBooking(ds,h){const b=bookings[selectedSpace][ds]?.[h];if(!b)return;if(!isAdmin){showToast("Apenas o administrador pode cancelar reservas.");return;}if(confirm('Cancelar reserva de "'+b.nome+'" ('+h+')?')){fbRemoveBooking(selectedSpace,ds,h);showToast("Reserva cancelada.");}}
+function openAdminModal(){document.getElementById("adminModal").classList.add("open");renderAdminBody();}
+function closeAdmin(){document.getElementById("adminModal").classList.remove("open");}
+function renderAdminBody(){const body=document.getElementById("adminBody");if(!isAdmin){body.innerHTML='<div><label class="form-label">Senha de administrador</label><input class="form-input" type="password" id="adminPass" placeholder="Digite a senha" style="margin-bottom:16px"></div><button class="submit-btn" style="background:#006B50" onclick="tryLogin()">Entrar</button><p style="font-size:11px;color:#999;margin-top:12px;text-align:center">Apenas o administrador pode alterar configura\u00e7\u00f5es e cancelar reservas.</p>';setTimeout(()=>{const el=document.getElementById("adminPass");if(el)el.focus();},150);}else{const qBlk=blockedSlots.quadra||{};body.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;font-weight:600;color:#2D8A4E">Logado como administrador</span><button onclick="doLogout()" style="font-size:11px;color:#E05050;background:none;border:none;cursor:pointer;font-weight:600;font-family:inherit">Sair</button></div><div class="admin-section"><div class="admin-section-title">Quadra \u2014 Bloqueio de hor\u00e1rio</div><div class="admin-row"><label>Manh\u00e3s reservadas para Ed. F\u00edsica (Seg\u2013S\u00e1b)</label><button class="admin-toggle '+(qBlk.morningBlock?"on":"off")+'" onclick="toggleQuadraMorning()"></button></div><div class="admin-row"><label>Hor\u00e1rio in\u00edcio</label><select class="form-input" style="width:100px" onchange="setQuadraStart(this.value)">'+optionsRange(5,12,qBlk.morningStart||7)+'</select></div><div class="admin-row"><label>Hor\u00e1rio fim</label><select class="form-input" style="width:100px" onchange="setQuadraEnd(this.value)">'+optionsRange(6,14,qBlk.morningEnd||11)+'</select></div></div><div class="admin-section"><div class="admin-section-title">Configura\u00e7\u00f5es gerais</div><div class="admin-row"><label>Funcionamento: Seg a Dom (7 dias)</label><span style="font-size:12px;color:#2D8A4E;font-weight:600">Ativo</span></div><div class="admin-row"><label>Hor\u00e1rio m\u00e1ximo: 23h</label><span style="font-size:12px;color:#2D8A4E;font-weight:600">Ativo</span></div><div class="admin-row"><label>Firebase</label><span style="font-size:12px;color:'+(firebaseReady?"#2D8A4E":"#E05050")+';font-weight:600">'+(firebaseReady?"Conectado":"N\u00e3o configurado")+'</span></div></div><div class="admin-section"><div class="admin-section-title">Alterar senha de admin</div><input class="form-input" type="password" id="newPass" placeholder="Nova senha" style="margin-bottom:10px"><button class="submit-btn" style="background:#006B50" onclick="changePass()">Alterar senha</button></div>';}}
+function optionsRange(min,max,sel){let h="";for(let i=min;i<=max;i++)h+='<option value="'+i+'"'+(i===sel?" selected":"")+">"+((i<10?"0":"")+i)+":00</option>";return h;}
+function tryLogin(){const p=document.getElementById("adminPass").value;if(p===ADMIN_PASSWORD){isAdmin=true;document.getElementById("adminToggle").classList.add("logged");document.getElementById("adminToggle").textContent="Admin ativo";showToast("Login realizado!");renderAdminBody();render();}else showToast("Senha incorreta.");}
+function doLogout(){isAdmin=false;document.getElementById("adminToggle").classList.remove("logged");document.getElementById("adminToggle").textContent="Administrador";showToast("Logout realizado.");closeAdmin();render();}
+function toggleQuadraMorning(){blockedSlots.quadra.morningBlock=!blockedSlots.quadra.morningBlock;fbSaveBlockedConfig();renderAdminBody();}
+function setQuadraStart(v){blockedSlots.quadra.morningStart=parseInt(v);fbSaveBlockedConfig();}
+function setQuadraEnd(v){blockedSlots.quadra.morningEnd=parseInt(v);fbSaveBlockedConfig();}
+function changePass(){const np=document.getElementById("newPass").value;if(np.length<4){showToast("M\u00ednimo 4 caracteres.");return;}if(firebaseReady)db.ref("config/adminPassword").set(np);showToast("Senha alterada!");}
+function render(){const s=getSpace();const spB=bookings[selectedSpace]||{};const sel=document.getElementById("spaceSelector");sel.innerHTML="";SPACES.forEach(sp=>{const active=sp.id===selectedSpace;const btn=document.createElement("button");btn.className="space-btn"+(active?" active":"");btn.style.borderColor=active?sp.color:"#E8E8E4";btn.style.background=active?sp.light:"#fff";let extra="";if(sp.id==="quadra"&&blockedSlots.quadra?.morningBlock)extra='<div style="font-size:10px;margin-top:3px;color:#E07A1E;font-weight:600">Ed. F\u00edsica + Voleibol + Funcional</div>';if(sp.id==="piscina"&&blockedSlots.piscina?.morningBlock)extra='<div style="font-size:10px;margin-top:3px;color:#E07A1E;font-weight:600">Ed. F\u00edsica + Nata\u00e7\u00e3o/Hidro</div>';if(sp.id==="pista"&&blockedSlots.pista?.morningBlock)extra='<div style="font-size:10px;margin-top:3px;color:#E07A1E;font-weight:600">Ed. F\u00edsica + Viva Atletismo</div>';btn.innerHTML='<div class="space-icon">'+sp.icon+'</div><div class="space-name" style="color:'+(active?sp.color:"#333")+'">'+sp.name+'</div><div class="space-info">'+sp.cap+" \u00b7 "+sp.hours+"</div>"+extra;btn.onclick=()=>selectSpace(sp.id);sel.appendChild(btn);});const nt=document.getElementById("navTitle");if(currentView==="week"){const mon=getMonday(viewDate);const sun=new Date(mon);sun.setDate(mon.getDate()+6);nt.textContent=mon.getDate()+" "+MONTHS[mon.getMonth()].slice(0,3)+" \u2013 "+sun.getDate()+" "+MONTHS[sun.getMonth()].slice(0,3)+" "+sun.getFullYear();}else{nt.textContent=MONTHS[viewDate.getMonth()]+" "+viewDate.getFullYear();}document.querySelectorAll(".view-btn").forEach(b=>{const v=b.textContent==="Semana"?"week":b.textContent==="M\u00eas"?"month":"list";b.classList.toggle("active",v===currentView);});document.getElementById("weekView").style.display=currentView==="week"?"block":"none";document.getElementById("monthView").style.display=currentView==="month"?"block":"none";document.getElementById("listView").style.display=currentView==="list"?"block":"none";if(currentView==="week")renderWeek(s,spB);else if(currentView==="month")renderMonth(s,spB);else renderList(s,spB);renderStats(s);renderLegend(s);}
+function renderWeek(s,spB){const mon=getMonday(viewDate);const hours=getHours();const todayStr=fmtDate(today);let html='<table><thead><tr><th class="hour-col">Hora</th>';for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);const ds=fmtDate(d);const isT=ds===todayStr;html+='<th><div class="day-label">'+DAYS_SHORT[i]+'</div><div'+(isT?' class="day-today"':'')+'><span class="day-num">'+d.getDate()+"</span></div></th>";}html+="</tr></thead><tbody>";hours.forEach(hour=>{html+='<tr><td class="hour-cell">'+hour+"</td>";for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);const ds=fmtDate(d);const bk=spB[ds]?.[hour];const blocked=isBlocked(selectedSpace,i,hour);if(blocked){html+='<td><div class="slot-blocked"><span>'+getBlockedLabel(selectedSpace,i,hour)+"</span></div></td>";}else if(bk){html+='<td><div class="slot-booked" style="background:'+s.color+'14;border:1px solid '+s.color+'30;" onclick="cancelBooking(\''+ds+"','"+hour+'\')" title="'+bk.nome+" \u2014 "+bk.mat+(isAdmin?"\nClique para cancelar":"")+'"><div class="slot-booked-name" style="color:'+s.color+'">'+bk.nome+'</div><div class="slot-booked-id">'+bk.mat+"</div></div></td>";}else{html+='<td><div class="slot-empty" onclick="openBooking(\''+ds+"','"+hour+"')\" onmouseenter=\"this.style.background='"+s.light+"';this.style.borderColor='"+s.color+"60'\" onmouseleave=\"this.style.background='#FAFAF8';this.style.borderColor='#DDD'\"><span>+</span></div></td>";}}html+="</tr>";});html+="</tbody></table>";document.getElementById("weekView").innerHTML=html;}
+function renderMonth(s,spB){const year=viewDate.getFullYear(),month=viewDate.getMonth();const firstDay=new Date(year,month,1);const lastDay=new Date(year,month+1,0);let startDow=firstDay.getDay();startDow=startDow===0?6:startDow-1;const totalDays=lastDay.getDate();const todayStr=fmtDate(today);let html='<div class="monthly-header">';DAYS_SHORT.forEach(d=>{html+="<div>"+d+"</div>";});html+='</div><div class="monthly-days">';const prevLast=new Date(year,month,0);for(let i=startDow-1;i>=0;i--)html+='<div class="monthly-day other-month"><div class="monthly-day-num">'+(prevLast.getDate()-i)+"</div></div>";for(let d=1;d<=totalDays;d++){const ds=year+"-"+String(month+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");const dow=(startDow+d-1)%7;const isT=ds===todayStr;const dayB=spB[ds]||{};const count=Object.keys(dayB).length;let bc=0;if(blockedSlots[selectedSpace])getHours().forEach(h=>{if(isBlocked(selectedSpace,dow,h))bc++;});html+='<div class="monthly-day'+(isT?" today":"")+'" onclick="openDayDetail(\''+ds+"')\">";html+='<div class="monthly-day-num">'+d+"</div>";if(count>0)html+='<div class="monthly-day-count" style="background:'+s.color+"18;color:"+s.color+'">'+count+" reserva"+(count>1?"s":"")+"</div>";if(bc>0)html+='<div class="monthly-day-blocked">Bloqueado ('+bc+"h)</div>";html+="</div>";}const rem=(7-(startDow+totalDays)%7)%7;for(let i=1;i<=rem;i++)html+='<div class="monthly-day other-month"><div class="monthly-day-num">'+i+"</div></div>";html+="</div>";document.getElementById("monthView").innerHTML=html;}
+function openDayDetail(ds){const s=getSpace();const d=new Date(ds+"T12:00:00");const dow=d.getDay()===0?6:d.getDay()-1;document.getElementById("dayModalTitle").textContent=s.name+" \u2014 "+DAYS_FULL[dow]+", "+d.getDate()+" de "+MONTHS[d.getMonth()];document.getElementById("dayModalSub").textContent="Hor\u00e1rios do dia";const hours=getHours();const dayB=bookings[selectedSpace][ds]||{};let html='<div style="display:flex;flex-direction:column;gap:6px">';hours.forEach(hour=>{const blocked=isBlocked(selectedSpace,dow,hour);const bk=dayB[hour];if(blocked){html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:repeating-linear-gradient(135deg,#f5f5f2,#f5f5f2 4px,#eee 4px,#eee 8px);border-radius:8px"><span style="font-size:13px;font-weight:600;color:#999;min-width:50px">'+hour+'</span><span style="font-size:12px;color:#888;font-weight:500">'+getBlockedLabel(selectedSpace,dow,hour)+"</span></div>";}else if(bk){html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+s.color+"10;border:1px solid "+s.color+'25;border-radius:8px;cursor:'+(isAdmin?"pointer":"default")+'" '+(isAdmin?"onclick=\"cancelBooking('"+ds+"','"+hour+"');closeDayModal()\"":"")+"><span style=\"font-size:13px;font-weight:600;color:"+s.color+';min-width:50px">'+hour+'</span><div><div style="font-size:13px;font-weight:600;color:#333">'+bk.nome+'</div><div style="font-size:11px;color:#999">'+bk.mat+"</div></div></div>";}else{html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#FAFAF8;border:1px dashed #DDD;border-radius:8px;cursor:pointer" onclick="closeDayModal();openBooking(\''+ds+"','"+hour+"')\"><span style=\"font-size:13px;font-weight:600;color:#BBB;min-width:50px\">"+hour+'</span><span style="font-size:12px;color:#CCC">Dispon\u00edvel \u2014 clique para reservar</span></div>';}});html+="</div>";document.getElementById("dayModalBody").innerHTML=html;document.getElementById("dayModal").classList.add("open");}
+function closeDayModal(){document.getElementById("dayModal").classList.remove("open");}
+function renderList(s,spB){const lv=document.getElementById("listView");let all=[];Object.entries(spB).forEach(([ds,hm])=>{Object.entries(hm).forEach(([h,bk])=>{all.push({ds,h,bk});});});all.sort((a,b)=>a.ds.localeCompare(b.ds)||a.h.localeCompare(b.h));if(all.length===0){lv.innerHTML='<div class="list-empty">Nenhuma reserva neste espa\u00e7o.</div>';return;}lv.innerHTML=all.map(({ds,h,bk})=>{const d=new Date(ds+"T12:00:00");const dow=d.getDay()===0?6:d.getDay()-1;return'<div class="list-item"><div class="list-date" style="background:'+s.light+'"><div class="list-date-day" style="color:'+s.color+'">'+DAYS_SHORT[dow]+'</div><div class="list-date-hour" style="color:'+s.color+'">'+d.getDate()+"/"+String(d.getMonth()+1).padStart(2,"0")+'</div></div><div class="list-info"><div class="list-info-name">'+bk.nome+'</div><div class="list-info-id">'+h+" \u00b7 Mat: "+bk.mat+"</div></div>"+(isAdmin?'<button class="cancel-btn" onclick="cancelBooking(\''+ds+"','"+h+"')\">Cancelar</button>":"")+"</div>";}).join("");}
+function renderStats(s){const hours=getHours();let ts=0,bs=0,bc=0;if(currentView==="week"){const mon=getMonday(viewDate);for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);const ds=fmtDate(d);hours.forEach(h=>{if(isBlocked(selectedSpace,i,h))bc++;else{ts++;if(bookings[selectedSpace][ds]?.[h])bs++;}});}}else{const year=viewDate.getFullYear(),month=viewDate.getMonth();const ld=new Date(year,month+1,0).getDate();for(let d=1;d<=ld;d++){const ds=year+"-"+String(month+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");const dt=new Date(ds+"T12:00:00");let dow=dt.getDay();dow=dow===0?6:dow-1;hours.forEach(h=>{if(isBlocked(selectedSpace,dow,h))bc++;else{ts++;if(bookings[selectedSpace][ds]?.[h])bs++;}});}}const occ=ts>0?Math.round(bs/ts*100):0;document.getElementById("statsBar").innerHTML='<div class="stat-card"><div class="stat-label">Ocupa\u00e7\u00e3o</div><div class="stat-value" style="color:'+s.color+'">'+occ+'%</div><div class="stat-bar"><div class="stat-bar-fill" style="background:'+s.color+";width:"+occ+'%"></div></div></div><div class="stat-card"><div class="stat-label">Hor\u00e1rios livres</div><div class="stat-value">'+(ts-bs)+'</div><div class="stat-sub">de '+ts+' dispon\u00edveis</div></div><div class="stat-card"><div class="stat-label">Reservas</div><div class="stat-value">'+bs+'</div><div class="stat-sub">'+(currentView==="week"?"nesta semana":"neste m\u00eas")+"</div></div>"+(bc>0?'<div class="stat-card"><div class="stat-label">Bloqueados</div><div class="stat-value" style="color:#E07A1E">'+bc+'</div><div class="stat-sub">uso institucional</div></div>':"");}
+function renderLegend(s){let html='<div class="legend-item"><div class="legend-box" style="border:1px dashed #DDD;background:#FAFAF8"></div><span class="legend-text">Dispon\u00edvel</span></div><div class="legend-item"><div class="legend-box" style="background:'+s.color+"20;border:1px solid "+s.color+'40"></div><span class="legend-text">Reservado</span></div>';const blk=blockedSlots[selectedSpace];if(blk&&(blk.morningBlock||blk.extraBlocks))html+='<div class="legend-item"><div class="legend-box" style="background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 3px,#e8e8e4 3px,#e8e8e4 6px);border:1px solid #DDD"></div><span class="legend-text">Hor\u00e1rio bloqueado (uso institucional)</span></div>';if(isAdmin)html+='<div class="legend-item"><span class="legend-text" style="color:#2D8A4E;font-weight:600">Modo admin: clique em reservas para cancelar</span></div>';else html+='<div class="legend-item"><span class="legend-text">Clique no "+" para reservar</span></div>';document.getElementById("legend").innerHTML=html;}
+document.getElementById("inputNome").addEventListener("input",checkForm);
+document.getElementById("inputMat").addEventListener("input",checkForm);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeBooking();closeAdmin();closeDayModal();}});
+if(FIREBASE_CONFIGURED&&firebaseReady){initFirebaseListeners();setTimeout(()=>{document.getElementById("loadingScreen").style.display="none";document.getElementById("mainApp").style.display="block";},1500);}else{document.getElementById("loadingScreen").style.display="none";document.getElementById("mainApp").style.display="block";document.getElementById("statusBar").innerHTML='<div class="status-dot status-offline"></div><span class="status-text">Modo local \u2014 Firebase n\u00e3o conectado</span>';render();}
+</script>
+</body>
+</html>
