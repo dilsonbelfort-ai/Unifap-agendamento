@@ -213,6 +213,8 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
       <input class="form-input" id="inputNome" placeholder="Digite seu nome" style="margin-bottom:14px" oninput="checkForm()">
       <label class="form-label" for="inputMat">Matrícula / Identificação</label>
       <input class="form-input" id="inputMat" placeholder="Ex: 2024001234" style="margin-bottom:14px" oninput="checkForm()">
+      <label class="form-label" for="inputEmail">E-mail para contato</label>
+      <input class="form-input" id="inputEmail" type="email" placeholder="seu.email@exemplo.com" style="margin-bottom:14px" oninput="checkForm()">
       <label class="form-label" for="inputFinalidade">Finalidade do uso do espaço</label>
       <select class="form-select" id="inputFinalidade" style="margin-bottom:14px" onchange="toggleFinalidadeOutra()">
         <option value="">Selecione a finalidade...</option>
@@ -233,7 +235,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
       </div>
       <div class="pending-box">
         <div class="pending-box-title">⏳ Aprovação necessária</div>
-        <div class="pending-box-text">Sua reserva ficará <strong>pendente</strong> até ser aprovada pelo administrador. Você receberá a confirmação em breve.</div>
+        <div class="pending-box-text">Sua reserva ficará <strong>pendente</strong> até ser aprovada pelo administrador. Você receberá a resposta no e-mail informado acima.</div>
       </div>
       <button class="submit-btn" id="submitBtn" onclick="confirmBooking()" disabled>Solicitar reserva</button>
     </div>
@@ -310,6 +312,7 @@ if (FIREBASE_CONFIGURED) {
 const EMAILJS_PUBLIC_KEY = "DMDqVG36TY6Iq-lMM";
 const EMAILJS_SERVICE_ID = "Agendamentos Esportivos";
 const EMAILJS_TEMPLATE_ID = "template_r14fzyj";
+const EMAILJS_RESPONSE_TEMPLATE_ID = "template_sxnptds"; // Template de resposta ao solicitante
 const EMAILJS_CONFIGURED = EMAILJS_PUBLIC_KEY !== "SEU_PUBLIC_KEY";
 
 if (EMAILJS_CONFIGURED) {
@@ -462,6 +465,32 @@ function sendNotificationEmail(bookingData, spaceId, dateStr, hour) {
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
     .then(function(){ console.log("E-mail enviado com sucesso"); })
     .catch(function(err){ console.error("Erro ao enviar e-mail:", err); });
+}
+
+function sendResponseEmail(bookingData, spaceId, dateStr, hour, status) {
+  if (!EMAILJS_CONFIGURED || EMAILJS_RESPONSE_TEMPLATE_ID === "SEU_TEMPLATE_RESPOSTA") {
+    console.log("Template de resposta não configurado.");
+    return;
+  }
+  if (!bookingData.email) {
+    console.log("E-mail do solicitante não informado.");
+    return;
+  }
+  const sp = SPACES.find(s => s.id === spaceId);
+  const statusText = status === "aprovado" ? "APROVADA" : "RECUSADA";
+  const params = {
+    to_email: bookingData.email,
+    nome: bookingData.nome,
+    espaco: sp ? sp.name : spaceId,
+    data: dateStr,
+    hora: hour,
+    finalidade: bookingData.finalidade || "Não informada",
+    matricula: bookingData.mat,
+    status: statusText
+  };
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_RESPONSE_TEMPLATE_ID, params)
+    .then(function(){ console.log("Resposta enviada para " + bookingData.email); })
+    .catch(function(err){ console.error("Erro ao enviar resposta:", err); });
 }
 
 // =================================================================
@@ -730,7 +759,7 @@ function renderListView() {
       '<div class="list-badge-hour" style="color:'+s.color+'">' + item.hour + '</div>' +
     '</div><div class="list-info">' +
       '<div class="list-info-name">' + item.bk.nome + (isPending ? ' <span style="color:#F57F17;font-size:10px">⏳ PENDENTE</span>' : '') + '</div>' +
-      '<div class="list-info-id">Matrícula: ' + item.bk.mat + '</div>' +
+      '<div class="list-info-id">Matrícula: ' + item.bk.mat + (item.bk.email ? ' · 📧 ' + item.bk.email : '') + '</div>' +
       (item.bk.finalidade ? '<div class="list-info-finalidade">Finalidade: ' + item.bk.finalidade + '</div>' : '') +
     '</div>' +
     (isAdmin ? '<button class="list-cancel" onclick="cancelBooking(\''+item.ds+'\',\''+item.hour+'\')">Cancelar</button>' : '') +
@@ -797,6 +826,7 @@ function openModal(dateStr, hour) {
   formTipo = "aluno";
   document.getElementById("inputNome").value = "";
   document.getElementById("inputMat").value = "";
+  document.getElementById("inputEmail").value = "";
   document.getElementById("inputFinalidade").value = "";
   document.getElementById("inputFinalidadeOutra").value = "";
   document.getElementById("inputFinalidadeOutra").style.display = "none";
@@ -841,22 +871,26 @@ function toggleFinalidadeOutra() {
 function checkForm() {
   const n = document.getElementById("inputNome").value.trim();
   const m = document.getElementById("inputMat").value.trim();
+  const e = document.getElementById("inputEmail").value.trim();
   const f = document.getElementById("inputFinalidade").value;
   const fo = document.getElementById("inputFinalidadeOutra").value.trim();
   const finalidadeOk = f && (f !== "Outra" || fo);
-  document.getElementById("submitBtn").disabled = !(n && m && finalidadeOk);
+  const emailOk = e && e.includes("@") && e.includes(".");
+  document.getElementById("submitBtn").disabled = !(n && m && emailOk && finalidadeOk);
 }
 
 function confirmBooking() {
   const n = document.getElementById("inputNome").value.trim();
   const m = document.getElementById("inputMat").value.trim();
+  const e = document.getElementById("inputEmail").value.trim();
   let f = document.getElementById("inputFinalidade").value;
   if (f === "Outra") f = document.getElementById("inputFinalidadeOutra").value.trim();
-  if (!n || !m || !f || !modalData) return;
+  if (!n || !m || !e || !f || !modalData) return;
 
   const data = {
     nome: n,
     mat: m,
+    email: e,
     tipo: formTipo,
     finalidade: f,
     status: "pendente",
@@ -883,8 +917,12 @@ function cancelBooking(dateStr, hour) {
 
 function approveBooking(dateStr, hour) {
   if (!isAdmin) return;
+  const sb = bookings[selectedSpace] || {};
+  const key = dateStr + "|" + hour;
+  const bk = sb[key];
   fbUpdateBookingStatus(selectedSpace, dateStr, hour, "aprovado");
-  showToast("Reserva aprovada com sucesso!");
+  if (bk) sendResponseEmail(bk, selectedSpace, dateStr, hour, "aprovado");
+  showToast("Reserva aprovada! E-mail enviado ao solicitante.");
 }
 
 function rejectBooking(dateStr, hour) {
@@ -893,8 +931,9 @@ function rejectBooking(dateStr, hour) {
   const key = dateStr + "|" + hour;
   const bk = sb[key];
   if (confirm('Recusar reserva de "' + (bk ? bk.nome : '') + '"? A reserva será removida.')) {
+    if (bk) sendResponseEmail(bk, selectedSpace, dateStr, hour, "recusado");
     fbDeleteBooking(selectedSpace, dateStr, hour);
-    showToast("Reserva recusada e removida.");
+    showToast("Reserva recusada! E-mail enviado ao solicitante.");
   }
 }
 
@@ -1014,6 +1053,7 @@ function renderAdminPanel() {
         '<div class="pending-item-info">' +
           '<div class="pending-item-name" style="color:'+item.color+'">' + item.spaceName + ' — ' + item.hour + '</div>' +
           '<div class="pending-item-detail">' + DAYS_FULL[dow] + ', ' + d.getDate() + '/' + (d.getMonth()+1) + ' · ' + item.bk.nome + ' · ' + item.bk.mat + ' (' + item.bk.tipo + ')</div>' +
+          (item.bk.email ? '<div class="pending-item-detail">📧 ' + item.bk.email + '</div>' : '') +
           '<div class="pending-item-finalidade">📋 Finalidade: ' + (item.bk.finalidade || 'Não informada') + '</div>' +
         '</div>' +
         '<div style="display:flex;gap:4px;flex-shrink:0">' +
