@@ -70,6 +70,10 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
 @keyframes pulse{0%,100%{opacity:0.6}50%{opacity:1}}
 .pendente-badge{font-size:8px;font-weight:700;background:#FFF3E6;color:#E07A1E;border-radius:4px;padding:1px 4px;display:inline-block;margin-top:2px}
 
+/* Slot indisponível (mês bloqueado) */
+.slot-unavailable{background:#f5f5f2;border:1px solid #e8e8e4;border-radius:8px;min-height:36px;display:flex;align-items:center;justify-content:center;cursor:not-allowed}
+.slot-unavailable span{font-size:9px;color:#ccc;font-weight:500}
+
 /* Monthly */
 .monthly-grid{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow:hidden;padding:16px}
 .month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
@@ -81,6 +85,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
 .month-day .md-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin:1px}
 .month-day.today{border-color:#006B50;background:#E8F5EC20}
 .month-day.empty{border-color:transparent;cursor:default}
+.month-day.disabled{opacity:0.35;cursor:not-allowed;background:#f8f8f6}
 
 /* List */
 .list-wrap{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow:hidden;padding:16px}
@@ -148,6 +153,9 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:500;z-index:2000;transition:.3s;opacity:0;pointer-events:none;max-width:90%;text-align:center}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
+/* Month limit info bar */
+.month-limit-bar{padding:8px 16px;text-align:center;font-size:11px;font-weight:600;border-radius:8px;margin-bottom:10px;background:#FFF8E1;color:#F57F17;border:1px solid #FFE082}
+
 @media(max-width:768px){
   .space-selector{flex-direction:column}
   .space-card{min-width:auto}
@@ -174,6 +182,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
 
 <div class="container">
   <div class="status-bar offline" id="statusBar">Modo local — dados salvos apenas neste navegador</div>
+  <div class="month-limit-bar" id="monthLimitBar"></div>
   <div class="space-selector" id="spaceSelector"></div>
   <div class="nav-bar">
     <div class="nav-left">
@@ -304,15 +313,11 @@ if (FIREBASE_CONFIGURED) {
 
 // =================================================================
 //  EMAILJS CONFIG
-//  Instruções: Crie conta gratuita em https://www.emailjs.com
-//  1. Adicione um "Email Service" (Gmail)
-//  2. Crie um "Email Template" com variáveis: {{nome}}, {{espaco}}, {{data}}, {{hora}}, {{finalidade}}, {{matricula}}, {{tipo}}
-//  3. Substitua os valores abaixo
 // =================================================================
 const EMAILJS_PUBLIC_KEY = "DMDqVG36TY6Iq-lMM";
 const EMAILJS_SERVICE_ID = "Agendamentos Esportivos";
 const EMAILJS_TEMPLATE_ID = "template_r14fzyj";
-const EMAILJS_RESPONSE_TEMPLATE_ID = "template_sxnptds"; // Template de resposta ao solicitante
+const EMAILJS_RESPONSE_TEMPLATE_ID = "template_sxnptds";
 const EMAILJS_CONFIGURED = EMAILJS_PUBLIC_KEY !== "SEU_PUBLIC_KEY";
 
 if (EMAILJS_CONFIGURED) {
@@ -447,10 +452,7 @@ function fbUpdateBookingStatus(spaceId, dateStr, hour, status) {
 //  EMAIL NOTIFICATION
 // =================================================================
 function sendNotificationEmail(bookingData, spaceId, dateStr, hour) {
-  if (!EMAILJS_CONFIGURED) {
-    console.log("EmailJS não configurado. Notificação por e-mail desabilitada.");
-    return;
-  }
+  if (!EMAILJS_CONFIGURED) return;
   const sp = SPACES.find(s => s.id === spaceId);
   const params = {
     to_email: ADMIN_EMAIL,
@@ -468,14 +470,8 @@ function sendNotificationEmail(bookingData, spaceId, dateStr, hour) {
 }
 
 function sendResponseEmail(bookingData, spaceId, dateStr, hour, status) {
-  if (!EMAILJS_CONFIGURED || EMAILJS_RESPONSE_TEMPLATE_ID === "SEU_TEMPLATE_RESPOSTA") {
-    console.log("Template de resposta não configurado.");
-    return;
-  }
-  if (!bookingData.email) {
-    console.log("E-mail do solicitante não informado.");
-    return;
-  }
+  if (!EMAILJS_CONFIGURED || EMAILJS_RESPONSE_TEMPLATE_ID === "SEU_TEMPLATE_RESPOSTA") return;
+  if (!bookingData.email) return;
   const sp = SPACES.find(s => s.id === spaceId);
   const statusText = status === "aprovado" ? "APROVADA" : "RECUSADA";
   const params = {
@@ -550,17 +546,60 @@ function showToast(msg) {
 }
 
 // =================================================================
+//  RESTRIÇÃO DE MÊS — LÓGICA PRINCIPAL
+//  Regra: antes do dia 15, só permite até o mês atual.
+//  A partir do dia 15, libera o mês seguinte.
+// =================================================================
+function getMaxAllowedMonth() {
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const dayOfMonth = today.getDate();
+  if (dayOfMonth >= 15) {
+    const nextMonth = currentMonth + 1;
+    return { month: nextMonth % 12, year: currentYear + Math.floor(nextMonth / 12) };
+  }
+  return { month: currentMonth, year: currentYear };
+}
+
+function isMonthAllowed(year, month) {
+  const max = getMaxAllowedMonth();
+  if (year < max.year) return true;
+  if (year === max.year && month <= max.month) return true;
+  return false;
+}
+
+function isDateAllowed(dateStr) {
+  const parts = dateStr.split("-");
+  const year = parseInt(parts[0]);
+  const month = parseInt(parts[1]) - 1;
+  return isMonthAllowed(year, month);
+}
+
+function getMonthLimitText() {
+  const max = getMaxAllowedMonth();
+  if (today.getDate() >= 15) {
+    return "📅 Agendamento liberado até " + MONTHS[max.month] + "/" + max.year;
+  }
+  return "📅 Agendamento liberado até " + MONTHS[max.month] + "/" + max.year + " · A partir do dia 15, o mês seguinte será liberado";
+}
+
+// =================================================================
 //  RENDER
 // =================================================================
 function render() {
   renderSpaceSelector();
   renderNav();
   renderStats();
+  renderMonthLimitBar();
   renderWeekView();
   renderMonthView();
   renderListView();
   renderLegend();
   updateViewVisibility();
+}
+
+function renderMonthLimitBar() {
+  document.getElementById("monthLimitBar").textContent = getMonthLimitText();
 }
 
 function renderSpaceSelector() {
@@ -611,7 +650,6 @@ function renderStats() {
       if (isBlocked(selectedSpace, dow, hour)) blockedCount++;
     });
   });
-  // Count bookings for this week only
   let bookedCount = 0;
   let pendingCount = 0;
   dates.forEach(dt => {
@@ -650,7 +688,8 @@ function renderWeekView() {
   let html = '<table><thead><tr><th class="hour-col">Hora</th>';
   dates.forEach((dt, i) => {
     const isToday = formatDateStr(dt) === todayStr;
-    html += '<th><div class="day-label">' + DAYS_SHORT[i] + '</div><div class="day-num" style="'+(isToday?'color:#006B50':'')+'">' + dt.getDate() + '</div></th>';
+    const dtAllowed = isDateAllowed(formatDateStr(dt));
+    html += '<th><div class="day-label">' + DAYS_SHORT[i] + '</div><div class="day-num" style="'+(isToday?'color:#006B50':'')+(dtAllowed?'':';opacity:0.35')+'">' + dt.getDate() + '</div></th>';
   });
   html += '</tr></thead><tbody>';
 
@@ -662,8 +701,12 @@ function renderWeekView() {
       const blocked = isBlocked(selectedSpace, dow, hour);
       const key = ds + "|" + hour;
       const bk = sb[key];
+      const dateAllowed = isDateAllowed(ds);
 
-      if (blocked) {
+      // Se a data está fora do mês permitido, mostrar como indisponível
+      if (!dateAllowed) {
+        html += '<td><div class="slot-unavailable"><span>🔒</span></div></td>';
+      } else if (blocked) {
         html += '<td><div class="slot-blocked"><span>' + blocked + '</span></div></td>';
       } else if (bk) {
         if (bk.status === "pendente") {
@@ -697,6 +740,7 @@ function renderMonthView() {
   const lastDay = new Date(year, month + 1, 0);
   let startDow = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
   const todayStr = formatDateStr(today);
+  const monthAllowed = isMonthAllowed(year, month);
 
   let html = '<div class="month-header">';
   DAYS_SHORT.forEach(d => { html += '<div>' + d + '</div>'; });
@@ -708,6 +752,7 @@ function renderMonthView() {
     const dt = new Date(year, month, d);
     const ds = formatDateStr(dt);
     const isToday = ds === todayStr;
+    const dateAllowed = isDateAllowed(ds);
     let dots = "";
     let count = 0;
     let pendCount = 0;
@@ -721,10 +766,18 @@ function renderMonthView() {
     });
     if (count > 0) dots += '<span class="md-dot" style="background:'+s.color+'"></span>';
     if (pendCount > 0) dots += '<span class="md-dot" style="background:#F57F17"></span>';
-    html += '<div class="month-day'+(isToday?' today':'')+'" onclick="openDayDetail(\''+ds+'\')">' +
-      '<div class="md-num">' + d + '</div>' +
-      '<div>' + dots + '</div>' +
-    '</div>';
+
+    if (!dateAllowed) {
+      html += '<div class="month-day disabled">' +
+        '<div class="md-num" style="color:#ccc">' + d + '</div>' +
+        '<div style="font-size:8px;color:#ccc">🔒</div>' +
+      '</div>';
+    } else {
+      html += '<div class="month-day'+(isToday?' today':'')+'" onclick="openDayDetail(\''+ds+'\')">' +
+        '<div class="md-num">' + d + '</div>' +
+        '<div>' + dots + '</div>' +
+      '</div>';
+    }
   }
   html += '</div>';
   mv.innerHTML = html;
@@ -776,6 +829,7 @@ function renderLegend() {
   const blk = blockedSlots[selectedSpace];
   if (blk && (blk.morningBlock || blk.extraBlocks))
     html += '<div class="legend-item"><div class="legend-box" style="background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 3px,#e8e8e4 3px,#e8e8e4 6px);border:1px solid #DDD"></div><span class="legend-text">Horário bloqueado (uso institucional)</span></div>';
+  html += '<div class="legend-item"><div class="legend-box" style="background:#f5f5f2;border:1px solid #e8e8e4"></div><span class="legend-text">🔒 Mês ainda não liberado</span></div>';
   document.getElementById("legend").innerHTML = html;
 }
 
@@ -805,8 +859,29 @@ function navPrev() {
 }
 
 function navNext() {
-  if (currentView === "month") viewDate.setMonth(viewDate.getMonth() + 1);
-  else viewDate.setDate(viewDate.getDate() + 7);
+  if (currentView === "month") {
+    // Verificar se o próximo mês é permitido
+    const nextMonth = viewDate.getMonth() + 1;
+    const nextYear = nextMonth > 11 ? viewDate.getFullYear() + 1 : viewDate.getFullYear();
+    const nextM = nextMonth % 12;
+    if (!isMonthAllowed(nextYear, nextM)) {
+      showToast("🔒 " + MONTHS[nextM] + " ainda não está liberado. Será liberado a partir do dia 15 de " + MONTHS[viewDate.getMonth()] + ".");
+      return;
+    }
+    viewDate.setMonth(viewDate.getMonth() + 1);
+  } else {
+    // Para semana, verificar se a semana seguinte tem pelo menos 1 dia permitido
+    const nextWeekDate = new Date(viewDate);
+    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+    const nextWeekDates = getWeekDates(nextWeekDate);
+    const anyAllowed = nextWeekDates.some(dt => isDateAllowed(formatDateStr(dt)));
+    if (!anyAllowed) {
+      const max = getMaxAllowedMonth();
+      showToast("🔒 Agendamento liberado somente até " + MONTHS[max.month] + "/" + max.year + ".");
+      return;
+    }
+    viewDate.setDate(viewDate.getDate() + 7);
+  }
   render();
 }
 
@@ -817,7 +892,13 @@ function navToday() {
 
 // Booking modal
 function openModal(dateStr, hour) {
-  // Check if slot already has a booking
+  // Verificar se a data está dentro do mês permitido
+  if (!isDateAllowed(dateStr)) {
+    const max = getMaxAllowedMonth();
+    showToast("🔒 Este mês ainda não está liberado para agendamento. Liberação a partir do dia 15 do mês anterior.");
+    return;
+  }
+
   const sb = bookings[selectedSpace] || {};
   const key = dateStr + "|" + hour;
   if (sb[key]) return;
@@ -887,6 +968,13 @@ function confirmBooking() {
   if (f === "Outra") f = document.getElementById("inputFinalidadeOutra").value.trim();
   if (!n || !m || !e || !f || !modalData) return;
 
+  // Dupla verificação de mês permitido
+  if (!isDateAllowed(modalData.dateStr)) {
+    showToast("🔒 Este mês ainda não está liberado para agendamento.");
+    closeBooking();
+    return;
+  }
+
   const data = {
     nome: n,
     mat: m,
@@ -951,6 +1039,12 @@ function showPendingAction(dateStr, hour) {
 
 // Day detail modal
 function openDayDetail(dateStr) {
+  // Verificar se a data é permitida
+  if (!isDateAllowed(dateStr)) {
+    showToast("🔒 Este mês ainda não está liberado para agendamento.");
+    return;
+  }
+
   const s = getSpace();
   const sb = bookings[selectedSpace] || {};
   const d = new Date(dateStr + "T12:00:00");
@@ -1029,7 +1123,6 @@ function renderAdminPanel() {
   document.getElementById("adminTitle").textContent = "Painel do Administrador";
   document.getElementById("adminSubtitle").textContent = "Reservas pendentes de aprovação";
 
-  // Gather all pending bookings across all spaces
   let pendingItems = [];
   SPACES.forEach(sp => {
     const sb = bookings[sp.id] || {};
