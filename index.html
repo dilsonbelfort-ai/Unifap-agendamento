@@ -674,9 +674,29 @@ function navToday(){ viewDate=new Date(); render(); }
 // =================================================================
 //  BOOKING MODAL
 // =================================================================
+function isMonthAllowed(ds) {
+  const d = new Date(ds+"T12:00:00");
+  const now = new Date();
+  const bookYear  = d.getFullYear();
+  const bookMonth = d.getMonth();
+  let maxYear  = now.getFullYear();
+  let maxMonth = now.getMonth();
+  if (now.getDate() >= 15) {
+    maxMonth++;
+    if (maxMonth > 11) { maxMonth = 0; maxYear++; }
+  }
+  if (bookYear > maxYear) return false;
+  if (bookYear === maxYear && bookMonth > maxMonth) return false;
+  return true;
+}
+
 function openModal(ds, hour) {
   const key=ds+"|"+hour;
   if ((bookings[selectedSpace]||{})[key]) return;
+  if (!isMonthAllowed(ds)) {
+    showToast("Agendamento para este mês ainda não está liberado. Liberação a partir do dia 15 do mês anterior.");
+    return;
+  }
   modalData={dateStr:ds, hour};
   formTipo="aluno";
   ["inputNome","inputMat","inputEmail"].forEach(id=>document.getElementById(id).value="");
