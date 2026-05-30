@@ -927,3 +927,1861 @@ if(firebaseReady){
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIFAP Esportes — Agendamento</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F0;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #E8E8E4;padding:16px 24px;position:sticky;top:0;z-index:100}
+.header-row{display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#006B50,#00A67E);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+.header-title{font-size:17px;font-weight:700;color:#1a1a1a}
+.header-sub{font-size:12px;color:#888}
+.admin-btn{font-size:12px;font-weight:600;color:#006B50;background:#E8F5EC;border:1px solid #C8E6D0;border-radius:8px;padding:8px 16px;cursor:pointer;transition:.2s}
+.admin-btn:hover{background:#D0EEDA}
+.admin-btn.active{background:#006B50;color:#fff;border-color:#006B50}
+.container{max-width:1200px;margin:0 auto;padding:16px 24px 80px}
+.status-bar{padding:8px 16px;text-align:center;font-size:12px;font-weight:600;border-radius:8px;margin-bottom:16px}
+.status-bar.online{background:#E8F5EC;color:#006B50}
+.status-bar.offline{background:#FFF3E6;color:#E07A1E}
+.space-selector{display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.space-card{flex:1;min-width:160px;background:#fff;border:2px solid #E8E8E4;border-radius:14px;padding:14px;cursor:pointer;transition:.2s;position:relative}
+.space-card:hover{border-color:#ccc}
+.space-card.active{border-color:var(--sc)}
+.space-card .sc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px}
+.space-card .sc-name{font-size:14px;font-weight:700;color:#1a1a1a}
+.space-card .sc-info{font-size:11px;color:#999;margin-top:2px}
+.space-card .sc-extra{font-size:10px;margin-top:3px;font-weight:600}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.nav-left{display:flex;align-items:center;gap:8px}
+.nav-btn{width:32px;height:32px;border-radius:8px;border:1px solid #E0E0DC;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.nav-btn:hover{background:#F0F0EC}
+.nav-title{font-size:15px;font-weight:700;color:#1a1a1a;min-width:180px;text-align:center}
+.nav-today{font-size:12px;font-weight:600;color:#006B50;background:#E8F5EC;border:1px solid #C8E6D0;border-radius:6px;padding:4px 12px;cursor:pointer}
+.view-toggle{display:flex;gap:2px;background:#E8E8E4;border-radius:8px;padding:2px}
+.view-btn{font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:6px;background:transparent;cursor:pointer;color:#666;transition:.15s}
+.view-btn.active{background:#fff;color:#1a1a1a;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.stats{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.stat-card{background:#fff;border:1px solid #E8E8E4;border-radius:10px;padding:10px 16px;flex:1;min-width:100px;text-align:center}
+.stat-label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-value{font-size:22px;font-weight:800;color:#1a1a1a;line-height:1.3}
+.stat-sub{font-size:10px;color:#aaa}
+.grid-wrap{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow-x:auto}
+.grid-wrap table{width:100%;border-collapse:collapse;min-width:600px}
+.grid-wrap th{font-size:11px;font-weight:600;color:#999;padding:10px 4px;text-align:center;border-bottom:1px solid #F0F0EC;background:#FAFAF8}
+.grid-wrap th .day-label{font-size:11px}
+.grid-wrap th .day-num{font-size:13px;color:#333;font-weight:700}
+.hour-col{width:60px}
+.hour-cell{font-size:12px;font-weight:600;color:#aaa;text-align:center;padding:4px;vertical-align:top;padding-top:8px}
+.grid-wrap td{padding:2px;vertical-align:top;border-bottom:1px solid #FAFAF8}
+.slot-empty{border:1px dashed #DDD;border-radius:8px;min-height:36px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;background:#FAFAF8}
+.slot-empty span{font-size:16px;color:#CCC}
+.slot-booked{border-radius:8px;padding:5px 7px;cursor:pointer;min-height:36px;transition:.15s;position:relative}
+.slot-booked-name{font-size:10px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot-booked-id{font-size:9px;color:#999;margin-top:1px}
+.slot-blocked{background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 3px,#e8e8e4 3px,#e8e8e4 6px);border:1px solid #DDD;border-radius:8px;min-height:36px;display:flex;align-items:center;justify-content:center}
+.slot-blocked span{font-size:8px;color:#999;font-weight:600;text-align:center;line-height:1.2;padding:2px}
+.slot-pendente{border:2px dashed;border-radius:8px;padding:5px 7px;min-height:36px;position:relative;animation:pulseAnim 2s infinite}
+@keyframes pulseAnim{0%,100%{opacity:0.6}50%{opacity:1}}
+.pendente-badge{font-size:8px;font-weight:700;background:#FFF3E6;color:#E07A1E;border-radius:4px;padding:1px 4px;display:inline-block;margin-top:2px}
+.monthly-grid{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow:hidden;padding:16px}
+.month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
+.month-header div{text-align:center;font-size:11px;font-weight:600;color:#999;padding:6px 0}
+.month-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.month-day{min-height:50px;border-radius:8px;border:1px solid #F0F0EC;padding:4px;cursor:pointer;transition:.15s}
+.month-day:hover{border-color:#ccc}
+.month-day .md-num{font-size:12px;font-weight:600;color:#333}
+.month-day .md-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin:1px}
+.month-day.today{border-color:#006B50;background:#E8F5EC20}
+.month-day.empty{border-color:transparent;cursor:default}
+.list-wrap{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow:hidden;padding:16px}
+.list-empty{text-align:center;padding:40px;color:#aaa;font-size:14px}
+.list-item{display:flex;align-items:center;gap:12px;background:#FAFAF8;border:1px solid #E8E8E4;border-radius:10px;padding:10px 14px;margin-bottom:6px}
+.list-badge{width:44px;height:44px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.list-badge-day{font-size:10px;font-weight:600}
+.list-badge-hour{font-size:12px;font-weight:700}
+.list-info{flex:1;min-width:0}
+.list-info-name{font-size:13px;font-weight:600;color:#333}
+.list-info-id{font-size:11px;color:#999}
+.list-info-finalidade{font-size:11px;color:#666;font-style:italic;margin-top:2px}
+.list-cancel{font-size:11px;font-weight:500;color:#E05050;background:#FEF0F0;border:1px solid #FDDDDD;border-radius:8px;padding:6px 12px;cursor:pointer}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-box{width:14px;height:14px;border-radius:4px}
+.legend-text{font-size:11px;color:#999}
+.footer{text-align:center;padding:24px;font-size:11px;color:#bbb}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:460px;box-shadow:0 24px 48px rgba(0,0,0,0.18);overflow:hidden;max-height:90vh;overflow-y:auto}
+.modal-header{padding:20px 24px 0}
+.modal-title{font-size:18px;font-weight:700;color:#1a1a1a}
+.modal-sub{font-size:12px;color:#888;margin-top:4px}
+.modal-body{padding:16px 24px 24px}
+.form-label{font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 14px;border:1px solid #DDD;border-radius:10px;font-size:14px;outline:none;transition:.2s;font-family:inherit}
+.form-input:focus{border-color:#006B50;box-shadow:0 0 0 3px rgba(0,107,80,0.1)}
+.form-select{width:100%;padding:10px 14px;border:1px solid #DDD;border-radius:10px;font-size:14px;outline:none;transition:.2s;font-family:inherit;background:#fff;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.form-select:focus{border-color:#006B50;box-shadow:0 0 0 3px rgba(0,107,80,0.1)}
+.tipo-btns{display:flex;gap:6px;margin-bottom:14px}
+.tipo-btn{flex:1;padding:8px 6px;border:1px solid #DDD;border-radius:8px;background:#fff;cursor:pointer;text-align:center;font-size:12px;font-weight:500;color:#666;transition:.15s}
+.submit-btn{width:100%;padding:12px;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.submit-btn:not(:disabled):hover{filter:brightness(1.1)}
+.email-box{background:#E8F4FD;border:1px solid #B8DCF0;border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.email-box-title{font-size:12px;font-weight:600;color:#0077B6;margin-bottom:4px}
+.email-box-text{font-size:12px;color:#555;line-height:1.5}
+.email-box a{color:#006B50;font-weight:700;text-decoration:none}
+.pending-box{background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.pending-box-title{font-size:12px;font-weight:600;color:#F57F17;margin-bottom:4px}
+.pending-box-text{font-size:12px;color:#555;line-height:1.5}
+.pending-item{display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed #FFE082;background:#FFF8E1;border-radius:10px;margin-bottom:8px}
+.pending-item-info{flex:1}
+.pending-item-name{font-size:14px;font-weight:600;color:#333}
+.pending-item-detail{font-size:11px;color:#888;margin-top:2px}
+.pending-item-finalidade{font-size:12px;color:#555;font-style:italic;margin-top:4px}
+.approve-btn{font-size:11px;font-weight:600;color:#fff;background:#2D8A4E;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;margin-right:4px}
+.reject-btn{font-size:11px;font-weight:600;color:#fff;background:#E05050;border:none;border-radius:6px;padding:6px 12px;cursor:pointer}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:500;z-index:2000;transition:.3s;opacity:0;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:768px){
+  .space-selector{flex-direction:column}
+  .space-card{min-width:auto}
+  .nav-bar{flex-direction:column;align-items:flex-start}
+  .stats{flex-direction:column}
+  .header-row{flex-direction:column;gap:10px;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div class="header-left">
+      <div class="header-logo">U</div>
+      <div>
+        <div class="header-title">UNIFAP Esportes</div>
+        <div class="header-sub">Sistema de Agendamento de Espaços Esportivos</div>
+      </div>
+    </div>
+    <button class="admin-btn" id="adminToggle" onclick="openAdminModal()">Administrador</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="status-bar offline" id="statusBar">Conectando...</div>
+  <div class="space-selector" id="spaceSelector"></div>
+  <div class="nav-bar">
+    <div class="nav-left">
+      <button class="nav-btn" onclick="navPrev()">&#8249;</button>
+      <div class="nav-title" id="navTitle"></div>
+      <button class="nav-btn" onclick="navNext()">&#8250;</button>
+      <button class="nav-today" onclick="navToday()">Hoje</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('week')">Semana</button>
+        <button class="view-btn" onclick="setView('month')">Mês</button>
+        <button class="view-btn" onclick="setView('list')">Lista</button>
+      </div>
+    </div>
+  </div>
+  <div class="stats" id="statsBar"></div>
+  <div id="weekView" class="grid-wrap"></div>
+  <div id="monthView" class="monthly-grid" style="display:none"></div>
+  <div id="listView" class="list-wrap" style="display:none"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="footer">UNIFAP — Universidade Federal do Amapá · Núcleo de Esportes e Lazer</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="bookingModal" onclick="closeBooking()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Nova solicitação de reserva</div>
+      <div class="modal-sub" id="bookingSub"></div>
+    </div>
+    <div class="modal-body">
+      <div class="form-label">Tipo de usuário</div>
+      <div class="tipo-btns" id="tipoBtns"></div>
+      <label class="form-label" for="inputNome">Nome completo *</label>
+      <input class="form-input" id="inputNome" placeholder="Digite seu nome completo" style="margin-bottom:14px" oninput="checkForm()">
+      <label class="form-label" for="inputMat">Matrícula / Identificação *</label>
+      <input class="form-input" id="inputMat" placeholder="Ex: 2024001234" style="margin-bottom:14px" oninput="checkForm()">
+      <label class="form-label" for="inputEmail">E-mail para contato *</label>
+      <input class="form-input" id="inputEmail" type="email" placeholder="seu.email@exemplo.com" style="margin-bottom:14px" oninput="checkForm()">
+      <label class="form-label" for="inputFinalidade">Finalidade do uso *</label>
+      <select class="form-select" id="inputFinalidade" style="margin-bottom:14px" onchange="toggleFinalidadeOutra()">
+        <option value="">Selecione a finalidade...</option>
+        <option value="Treino esportivo">Treino esportivo</option>
+        <option value="Aula prática">Aula prática</option>
+        <option value="Evento acadêmico">Evento acadêmico</option>
+        <option value="Atividade recreativa">Atividade recreativa</option>
+        <option value="Competição / Campeonato">Competição / Campeonato</option>
+        <option value="Projeto de extensão">Projeto de extensão</option>
+        <option value="Treinamento de equipe">Treinamento de equipe</option>
+        <option value="Uso comunitário">Uso comunitário</option>
+        <option value="Outra">Outra (especificar)</option>
+      </select>
+      <input class="form-input" id="inputFinalidadeOutra" placeholder="Descreva a finalidade" style="margin-bottom:14px;display:none" oninput="checkForm()">
+      <div class="email-box">
+        <div class="email-box-title">📧 Precisa enviar ofício?</div>
+        <div class="email-box-text">Envie o documento por e-mail para:<br><a href="mailto:dilsonbelfort@gmail.com">dilsonbelfort@gmail.com</a></div>
+      </div>
+      <div class="pending-box">
+        <div class="pending-box-title">⏳ Aprovação necessária</div>
+        <div class="pending-box-text">Sua reserva ficará <strong>pendente</strong> até ser aprovada pelo administrador. Você receberá a confirmação no e-mail informado.</div>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="confirmBooking()" disabled>Solicitar reserva</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="adminModal" onclick="closeAdmin()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="adminTitle">Painel do Administrador</div>
+      <div class="modal-sub" id="adminSubtitle">Faça login para gerenciar o sistema</div>
+    </div>
+    <div class="modal-body" id="adminBody"></div>
+  </div>
+</div>
+
+<!-- DAY DETAIL MODAL -->
+<div class="modal-overlay" id="dayModal" onclick="closeDayModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="dayModalTitle"></div>
+      <div class="modal-sub" id="dayModalSub"></div>
+    </div>
+    <div class="modal-body" id="dayModalBody" style="max-height:50vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script>
+// =================================================================
+//  FIREBASE
+// =================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCDhNdYmzF2GZa9JdcgT4LVf_KKw_irk8M",
+  authDomain: "unifap-agendamento.firebaseapp.com",
+  databaseURL: "https://unifap-agendamento-default-rtdb.firebaseio.com",
+  projectId: "unifap-agendamento",
+  storageBucket: "unifap-agendamento.firebasestorage.app",
+  messagingSenderId: "172401509466",
+  appId: "1:172401509466:web:d0ef2dd7a066e72c334463"
+};
+
+let db = null, firebaseReady = false;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  firebaseReady = true;
+} catch(e) { console.error("Firebase error:", e); }
+
+// =================================================================
+//  EMAILJS
+// =================================================================
+const EMAILJS_PUBLIC_KEY        = "DMDqVG36TY6Iq-lMM";
+const EMAILJS_SERVICE_ID        = "Agendamentos Esportivos";
+const EMAILJS_TEMPLATE_ADMIN    = "template_r14fzyj";   // notifica você
+const EMAILJS_TEMPLATE_RESPONSE = "template_sxnptds";   // responde solicitante
+
+try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.error("EmailJS error:", e); }
+
+const ADMIN_EMAIL    = "dilsonbelfort@gmail.com";
+const ADMIN_PASSWORD = "unifap2024";
+
+// =================================================================
+//  SPACES & CONSTANTS
+// =================================================================
+const SPACES = [
+  {id:"quadra", name:"Quadra Poliesportiva", icon:"◆", color:"#2D8A4E", light:"#E8F5EC", cap:"20 pessoas", hours:"7h–23h", min:7,  max:22},
+  {id:"pista",  name:"Pista de Atletismo",   icon:"→", color:"#E07A1E", light:"#FFF3E6", cap:"Livre",      hours:"5h–22h", min:5,  max:22},
+  {id:"piscina",name:"Piscina",              icon:"~", color:"#0077B6", light:"#E8F4FD", cap:"30 pessoas", hours:"6h–22h", min:6,  max:22}
+];
+const MONTHS     = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DAYS_SHORT = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+const DAYS_FULL  = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+
+// =================================================================
+//  BLOCKED SLOTS
+// =================================================================
+const blockedSlots = {
+  piscina:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:6, morningEnd:12,
+    extraBlocks:[
+      {label:"Natação/Hidro (Proespol)", days:[0,1,2,3,4], startHour:17, endHour:21}
+    ]
+  },
+  pista:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:5, morningEnd:12,
+    extraBlocks:[
+      {label:"Viva Atletismo Olímp./Paral.", days:[0,2], startHour:15, endHour:17},
+      {label:"Proj. Viva Atletismo",         days:[3],   startHour:15, endHour:17}
+    ]
+  },
+  quadra:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:7, morningEnd:11,
+    extraBlocks:[
+      {label:"Inic. Esportiva Inf. (Proespol)", days:[1,3], startHour:14, endHour:18},
+      {label:"Voleibol (Proespol)",              days:[1,3], startHour:18, endHour:20},
+      {label:"Treinamento Funcional",            days:[0],   startHour:17, endHour:19},
+      {label:"Treinamento Funcional",            days:[2,4], startHour:16, endHour:18},
+      {label:"Voleibol (Proespol)",              days:[4],   startHour:18, endHour:21},
+      {label:"Voleibol (Proespol)",              days:[5],   startHour:13, endHour:16},
+      {label:"Basquete Feminino",                days:[0],   startHour:19, endHour:21},
+      {label:"Basquete Feminino",                days:[5],   startHour:16, endHour:18},
+      {label:"Basquete Masculino",               days:[2],   startHour:19, endHour:21},
+      {label:"Basquete Masculino",               days:[5],   startHour:18, endHour:20},
+      {label:"Futsal Masculino",                 days:[2],   startHour:21, endHour:23}
+    ]
+  }
+};
+
+// =================================================================
+//  STATE
+// =================================================================
+let selectedSpace = "quadra";
+let currentView   = "week";
+let isAdmin       = false;
+let today         = new Date();
+let viewDate      = new Date();
+let modalData     = null;
+let formTipo      = "aluno";
+let bookings      = {piscina:{}, pista:{}, quadra:{}};
+
+// =================================================================
+//  FIREBASE LISTENERS
+// =================================================================
+function initFirebaseListeners() {
+  SPACES.forEach(sp => {
+    db.ref("bookings/" + sp.id).on("value", snapshot => {
+      const data = snapshot.val();
+      bookings[sp.id] = {};
+      if (data) {
+        Object.keys(data).forEach(dk => {
+          const ds = dk.replace(/_/g, "-");
+          const hours = data[dk];
+          if (hours && typeof hours === "object") {
+            Object.keys(hours).forEach(hk => {
+              bookings[sp.id][ds + "|" + hk.replace(/_/g, ":")] = hours[hk];
+            });
+          }
+        });
+      }
+      render();
+    });
+  });
+  db.ref(".info/connected").on("value", snap => {
+    const bar = document.getElementById("statusBar");
+    if (snap.val()) {
+      bar.className = "status-bar online";
+      bar.textContent = "Conectado — dados em tempo real";
+    } else {
+      bar.className = "status-bar offline";
+      bar.textContent = "Desconectado — reconectando...";
+    }
+  });
+}
+
+function fbSave(spId, ds, h, data) {
+  if (firebaseReady) {
+    db.ref("bookings/"+spId+"/"+ds.replace(/-/g,"_")+"/"+h.replace(/:/g,"_")).set(data);
+  } else {
+    bookings[spId][ds+"|"+h] = data;
+    render();
+  }
+}
+
+function fbDelete(spId, ds, h) {
+  if (firebaseReady) {
+    db.ref("bookings/"+spId+"/"+ds.replace(/-/g,"_")+"/"+h.replace(/:/g,"_")).remove();
+  } else {
+    delete bookings[spId][ds+"|"+h];
+    render();
+  }
+}
+
+function fbUpdateStatus(spId, ds, h, status) {
+  if (firebaseReady) {
+    db.ref("bookings/"+spId+"/"+ds.replace(/-/g,"_")+"/"+h.replace(/:/g,"_")+"/status").set(status);
+  } else {
+    if (bookings[spId][ds+"|"+h]) { bookings[spId][ds+"|"+h].status = status; render(); }
+  }
+}
+
+// =================================================================
+//  EMAIL
+// =================================================================
+function sendEmailAdmin(bk, spId, ds, h) {
+  const sp = SPACES.find(s => s.id === spId);
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ADMIN, {
+    to_email:   ADMIN_EMAIL,
+    nome:       bk.nome,
+    espaco:     sp ? sp.name : spId,
+    data:       ds,
+    hora:       h,
+    finalidade: bk.finalidade || "Não informada",
+    matricula:  bk.mat,
+    tipo:       bk.tipo,
+    email:      bk.email
+  }).then(() => console.log("E-mail admin enviado"))
+    .catch(err => console.error("Erro e-mail admin:", err));
+}
+
+function sendEmailResponse(bk, spId, ds, h, status) {
+  if (!bk.email) return;
+  const sp = SPACES.find(s => s.id === spId);
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_RESPONSE, {
+    to_email:   bk.email,
+    nome:       bk.nome,
+    espaco:     sp ? sp.name : spId,
+    data:       ds,
+    hora:       h,
+    finalidade: bk.finalidade || "Não informada",
+    matricula:  bk.mat,
+    status:     status === "aprovado" ? "APROVADA ✅" : "RECUSADA ❌",
+    email:      bk.email
+  }).then(() => console.log("E-mail resposta enviado para " + bk.email))
+    .catch(err => console.error("Erro e-mail resposta:", err));
+}
+
+// =================================================================
+//  HELPERS
+// =================================================================
+function getSpace() { return SPACES.find(s => s.id === selectedSpace); }
+
+function getWeekDates() {
+  const day = viewDate.getDay();
+  const mon = new Date(viewDate);
+  mon.setDate(viewDate.getDate() - (day === 0 ? 6 : day - 1));
+  return Array.from({length:7}, (_, i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function fmtDate(d) {
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function isBlocked(spId, dow, hour) {
+  const blk = blockedSlots[spId];
+  if (!blk) return null;
+  const hr = parseInt(hour);
+  if (blk.morningBlock && hr >= blk.morningStart && hr < blk.morningEnd) return blk.morningLabel;
+  if (blk.extraBlocks) {
+    for (const eb of blk.extraBlocks) {
+      if (eb.days.includes(dow) && hr >= eb.startHour && hr < eb.endHour) return eb.label;
+    }
+  }
+  return null;
+}
+
+function getHours(spId) {
+  const sp = SPACES.find(s => s.id === (spId||selectedSpace));
+  return Array.from({length: sp.max - sp.min + 1}, (_, i) => String(sp.min+i).padStart(2,"0")+":00");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+// =================================================================
+//  RENDER
+// =================================================================
+function render() {
+  renderSpaceSelector();
+  renderNav();
+  renderStats();
+  renderWeekView();
+  renderMonthView();
+  renderListView();
+  renderLegend();
+  updateViewVisibility();
+}
+
+function renderSpaceSelector() {
+  document.getElementById("spaceSelector").innerHTML = SPACES.map(sp => {
+    const active = sp.id === selectedSpace;
+    let extra = "";
+    if (sp.id==="quadra")  extra='<div class="sc-extra" style="color:#E07A1E">Ed. Física + Voleibol + Funcional</div>';
+    if (sp.id==="piscina") extra='<div class="sc-extra" style="color:#E07A1E">Ed. Física + Natação/Hidro</div>';
+    if (sp.id==="pista")   extra='<div class="sc-extra" style="color:#E07A1E">Ed. Física + Viva Atletismo</div>';
+    return '<div class="space-card'+(active?' active':'')+'" style="--sc:'+sp.color+';'+(active?'border-color:'+sp.color:'')+'" onclick="selectSpace(\''+sp.id+'\')">'+
+      '<div class="sc-icon" style="background:'+sp.light+';color:'+sp.color+'">'+sp.icon+'</div>'+
+      '<div class="sc-name">'+sp.name+'</div>'+
+      '<div class="sc-info">'+sp.cap+' · '+sp.hours+'</div>'+extra+'</div>';
+  }).join("");
+}
+
+function renderNav() {
+  const el = document.getElementById("navTitle");
+  if (currentView === "month") {
+    el.textContent = MONTHS[viewDate.getMonth()]+" "+viewDate.getFullYear();
+  } else {
+    const dates = getWeekDates();
+    const f = dates[0], l = dates[6];
+    if (f.getMonth()===l.getMonth())
+      el.textContent = f.getDate()+" – "+l.getDate()+" de "+MONTHS[f.getMonth()]+" "+f.getFullYear();
+    else
+      el.textContent = f.getDate()+" "+MONTHS[f.getMonth()].substring(0,3)+" – "+l.getDate()+" "+MONTHS[l.getMonth()].substring(0,3)+" "+l.getFullYear();
+  }
+}
+
+function renderStats() {
+  const s = getSpace();
+  const sb = bookings[selectedSpace]||{};
+  const hours = getHours();
+  const dates = getWeekDates();
+  let blocked=0, booked=0, pending=0;
+  dates.forEach((dt,i) => {
+    hours.forEach(h => {
+      if (isBlocked(selectedSpace,i,h)) blocked++;
+      else {
+        const bk = sb[fmtDate(dt)+"|"+h];
+        if (bk) { if (bk.status==="pendente") pending++; else booked++; }
+      }
+    });
+  });
+  const avail = 7*hours.length - blocked - booked - pending;
+  const occ   = (7*hours.length-blocked)>0 ? Math.round(((booked+pending)/(7*hours.length-blocked))*100) : 0;
+  let html = '<div class="stat-card"><div class="stat-label">Disponíveis</div><div class="stat-value" style="color:#2D8A4E">'+avail+'</div><div class="stat-sub">horários livres</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Reservados</div><div class="stat-value" style="color:'+s.color+'">'+booked+'</div><div class="stat-sub">confirmados</div></div>';
+  if (pending>0) html+='<div class="stat-card"><div class="stat-label">Pendentes</div><div class="stat-value" style="color:#F57F17">'+pending+'</div><div class="stat-sub">aguardando aprovação</div></div>';
+  if (blocked>0) html+='<div class="stat-card"><div class="stat-label">Bloqueados</div><div class="stat-value" style="color:#E07A1E">'+blocked+'</div><div class="stat-sub">uso institucional</div></div>';
+  html+='<div class="stat-card"><div class="stat-label">Ocupação</div><div class="stat-value">'+occ+'%</div><div class="stat-sub">da semana</div></div>';
+  document.getElementById("statsBar").innerHTML = html;
+}
+
+function renderWeekView() {
+  const s = getSpace();
+  const dates = getWeekDates();
+  const hours = getHours();
+  const sb = bookings[selectedSpace]||{};
+  const todayStr = fmtDate(today);
+  let html = '<table><thead><tr><th class="hour-col">Hora</th>';
+  dates.forEach((dt,i) => {
+    const isT = fmtDate(dt)===todayStr;
+    html+='<th><div class="day-label">'+DAYS_SHORT[i]+'</div><div class="day-num" style="'+(isT?'color:#006B50':'')+'">'+dt.getDate()+'</div></th>';
+  });
+  html+='</tr></thead><tbody>';
+  hours.forEach(hour => {
+    html+='<tr><td class="hour-cell">'+hour+'</td>';
+    dates.forEach((dt,i) => {
+      const ds = fmtDate(dt);
+      const blocked = isBlocked(selectedSpace,i,hour);
+      const key = ds+"|"+hour;
+      const bk = sb[key];
+      if (blocked) {
+        html+='<td><div class="slot-blocked"><span>'+blocked+'</span></div></td>';
+      } else if (bk) {
+        if (bk.status==="pendente") {
+          html+='<td><div class="slot-pendente" style="border-color:'+s.color+'50;background:'+s.color+'08;" '+(isAdmin?'onclick="showPendingAction(\''+ds+'\',\''+hour+'\')"':'')+' title="'+bk.nome+' — PENDENTE'+(isAdmin?' (clique para gerenciar)':'')+'">'
+            +'<div class="slot-booked-name" style="color:'+s.color+'">'+bk.nome+'</div>'
+            +'<div class="pendente-badge">⏳ Pendente</div>'
+          +'</div></td>';
+        } else {
+          html+='<td><div class="slot-booked" style="background:'+s.color+'14;border:1px solid '+s.color+'30;" '+(isAdmin?'onclick="cancelBooking(\''+ds+'\',\''+hour+'\')"':'')+' title="'+bk.nome+' — '+bk.mat+(isAdmin?' (clique para cancelar)':'')+'">'
+            +'<div class="slot-booked-name" style="color:'+s.color+'">'+bk.nome+'</div>'
+            +'<div class="slot-booked-id">'+bk.mat+'</div>'
+          +'</div></td>';
+        }
+      } else {
+        html+='<td><div class="slot-empty" onclick="openModal(\''+ds+'\',\''+hour+'\')" onmouseenter="this.style.background=\''+s.light+'\';this.style.borderColor=\''+s.color+'60\'" onmouseleave="this.style.background=\'#FAFAF8\';this.style.borderColor=\'#DDD\'"><span>+</span></div></td>';
+      }
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById("weekView").innerHTML = html;
+}
+
+function renderMonthView() {
+  const s = getSpace();
+  const sb = bookings[selectedSpace]||{};
+  const year=viewDate.getFullYear(), month=viewDate.getMonth();
+  const firstDay=new Date(year,month,1);
+  let startDow = firstDay.getDay()===0?6:firstDay.getDay()-1;
+  const lastDay=new Date(year,month+1,0).getDate();
+  const todayStr=fmtDate(today);
+  let html='<div class="month-header">'+DAYS_SHORT.map(d=>'<div>'+d+'</div>').join('')+'</div><div class="month-days">';
+  for(let i=0;i<startDow;i++) html+='<div class="month-day empty"></div>';
+  for(let d=1;d<=lastDay;d++){
+    const dt=new Date(year,month,d);
+    const ds=fmtDate(dt);
+    const isT=ds===todayStr;
+    let dots="", count=0, pend=0;
+    getHours().forEach(h=>{
+      const bk=sb[ds+"|"+h];
+      if(bk){if(bk.status==="pendente")pend++;else count++;}
+    });
+    if(count>0) dots+='<span class="md-dot" style="background:'+s.color+'"></span>';
+    if(pend>0)  dots+='<span class="md-dot" style="background:#F57F17"></span>';
+    html+='<div class="month-day'+(isT?' today':'')+'" onclick="openDayDetail(\''+ds+'\')"><div class="md-num">'+d+'</div><div>'+dots+'</div></div>';
+  }
+  html+='</div>';
+  document.getElementById("monthView").innerHTML=html;
+}
+
+function renderListView() {
+  const s=getSpace();
+  const sb=bookings[selectedSpace]||{};
+  const dates=getWeekDates();
+  let items=[];
+  dates.forEach((dt,i)=>{
+    const ds=fmtDate(dt);
+    getHours().forEach(h=>{
+      const bk=sb[ds+"|"+h];
+      if(bk) items.push({ds,h,bk,dow:DAYS_SHORT[i]});
+    });
+  });
+  if(items.length===0){
+    document.getElementById("listView").innerHTML='<div class="list-empty">Nenhuma reserva esta semana.</div>';
+    return;
+  }
+  document.getElementById("listView").innerHTML=items.map(item=>{
+    const isPending=item.bk.status==="pendente";
+    return '<div class="list-item" style="'+(isPending?'border:2px dashed #FFE082;background:#FFF8E1':'')+'">'+
+      '<div class="list-badge" style="background:'+s.light+'">'+
+        '<div class="list-badge-day" style="color:'+s.color+'">'+item.dow+'</div>'+
+        '<div class="list-badge-hour" style="color:'+s.color+'">'+item.h+'</div>'+
+      '</div>'+
+      '<div class="list-info">'+
+        '<div class="list-info-name">'+item.bk.nome+(isPending?' <span style="color:#F57F17;font-size:10px">⏳ PENDENTE</span>':'')+'</div>'+
+        '<div class="list-info-id">'+item.bk.mat+(item.bk.email?' · '+item.bk.email:'')+'</div>'+
+        (item.bk.finalidade?'<div class="list-info-finalidade">'+item.bk.finalidade+'</div>':'')+
+      '</div>'+
+      (isAdmin&&isPending?'<button class="approve-btn" onclick="approveBooking(\''+item.ds+'\',\''+item.h+'\')">Aprovar</button><button class="reject-btn" onclick="rejectBooking(\''+item.ds+'\',\''+item.h+'\')">Recusar</button>':'')+
+      (isAdmin&&!isPending?'<button class="list-cancel" onclick="cancelBooking(\''+item.ds+'\',\''+item.h+'\')">Cancelar</button>':'')+
+    '</div>';
+  }).join("");
+}
+
+function renderLegend() {
+  const s=getSpace();
+  let html='<div class="legend-item"><div class="legend-box" style="border:1px dashed #DDD;background:#FAFAF8"></div><span class="legend-text">Disponível</span></div>'+
+    '<div class="legend-item"><div class="legend-box" style="background:'+s.color+'20;border:1px solid '+s.color+'30"></div><span class="legend-text">Reservado (aprovado)</span></div>'+
+    '<div class="legend-item"><div class="legend-box" style="border:2px dashed '+s.color+'50;background:'+s.color+'08"></div><span class="legend-text">Pendente (aguardando aprovação)</span></div>'+
+    '<div class="legend-item"><div class="legend-box" style="background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 3px,#e8e8e4 3px,#e8e8e4 6px);border:1px solid #DDD"></div><span class="legend-text">Bloqueado (uso institucional)</span></div>';
+  document.getElementById("legend").innerHTML=html;
+}
+
+function updateViewVisibility() {
+  document.getElementById("weekView").style.display  = currentView==="week"  ? "block":"none";
+  document.getElementById("monthView").style.display = currentView==="month" ? "block":"none";
+  document.getElementById("listView").style.display  = currentView==="list"  ? "block":"none";
+  document.querySelectorAll(".view-btn").forEach(btn=>{
+    const map={Semana:"week",Mês:"month",Lista:"list"};
+    btn.classList.toggle("active", map[btn.textContent]===currentView);
+  });
+}
+
+// =================================================================
+//  NAVIGATION
+// =================================================================
+function selectSpace(id){ selectedSpace=id; render(); }
+function setView(v){ currentView=v; render(); }
+function navPrev(){ if(currentView==="month") viewDate.setMonth(viewDate.getMonth()-1); else viewDate.setDate(viewDate.getDate()-7); render(); }
+function navNext(){ if(currentView==="month") viewDate.setMonth(viewDate.getMonth()+1); else viewDate.setDate(viewDate.getDate()+7); render(); }
+function navToday(){ viewDate=new Date(); render(); }
+
+// =================================================================
+//  BOOKING MODAL
+// =================================================================
+function isMonthAllowed(ds) {
+  const d = new Date(ds+"T12:00:00");
+  const now = new Date();
+  const bookYear  = d.getFullYear();
+  const bookMonth = d.getMonth();
+  let maxYear  = now.getFullYear();
+  let maxMonth = now.getMonth();
+  if (now.getDate() >= 15) {
+    maxMonth++;
+    if (maxMonth > 11) { maxMonth = 0; maxYear++; }
+  }
+  if (bookYear > maxYear) return false;
+  if (bookYear === maxYear && bookMonth > maxMonth) return false;
+  return true;
+}
+
+function openModal(ds, hour) {
+  const key=ds+"|"+hour;
+  if ((bookings[selectedSpace]||{})[key]) return;
+  if (!isMonthAllowed(ds)) {
+    showToast("Agendamento para este mês ainda não está liberado. Liberação a partir do dia 15 do mês anterior.");
+    return;
+  }
+  modalData={dateStr:ds, hour};
+  formTipo="aluno";
+  ["inputNome","inputMat","inputEmail"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("inputFinalidade").value="";
+  document.getElementById("inputFinalidadeOutra").value="";
+  document.getElementById("inputFinalidadeOutra").style.display="none";
+  const s=getSpace();
+  const d=new Date(ds+"T12:00:00");
+  const dow=d.getDay()===0?6:d.getDay()-1;
+  document.getElementById("bookingSub").textContent=s.name+" · "+DAYS_FULL[dow]+", "+d.getDate()+" de "+MONTHS[d.getMonth()]+" · "+hour;
+  document.getElementById("submitBtn").style.background=s.color;
+  document.getElementById("submitBtn").disabled=true;
+  renderTipoBtns();
+  document.getElementById("bookingModal").classList.add("open");
+  setTimeout(()=>document.getElementById("inputNome").focus(),150);
+}
+
+function closeBooking(){ document.getElementById("bookingModal").classList.remove("open"); modalData=null; }
+
+function renderTipoBtns(){
+  const s=getSpace();
+  document.getElementById("tipoBtns").innerHTML=[["aluno","Aluno"],["servidor","Servidor"],["comunidade","Comunidade"]].map(([v,l])=>
+    '<div class="tipo-btn'+(v===formTipo?' active':'')+'" style="'+(v===formTipo?'border-color:'+s.color+';background:'+s.color+';color:#fff':'')+'" onclick="setTipo(\''+v+'\')">'+l+'</div>'
+  ).join("");
+}
+
+function setTipo(t){ formTipo=t; renderTipoBtns(); }
+
+function toggleFinalidadeOutra(){
+  const sel=document.getElementById("inputFinalidade").value;
+  document.getElementById("inputFinalidadeOutra").style.display=sel==="Outra"?"block":"none";
+  checkForm();
+}
+
+function checkForm(){
+  const n=document.getElementById("inputNome").value.trim();
+  const m=document.getElementById("inputMat").value.trim();
+  const e=document.getElementById("inputEmail").value.trim();
+  const f=document.getElementById("inputFinalidade").value;
+  const fo=document.getElementById("inputFinalidadeOutra").value.trim();
+  const emailOk=e&&e.includes("@")&&e.includes(".");
+  const finalOk=f&&(f!=="Outra"||fo);
+  document.getElementById("submitBtn").disabled=!(n&&m&&emailOk&&finalOk);
+}
+
+function confirmBooking(){
+  const n=document.getElementById("inputNome").value.trim();
+  const m=document.getElementById("inputMat").value.trim();
+  const e=document.getElementById("inputEmail").value.trim();
+  let f=document.getElementById("inputFinalidade").value;
+  if(f==="Outra") f=document.getElementById("inputFinalidadeOutra").value.trim();
+  if(!n||!m||!e||!f||!modalData) return;
+  const data={nome:n, mat:m, email:e, tipo:formTipo, finalidade:f, status:"pendente", timestamp:Date.now()};
+  fbSave(selectedSpace, modalData.dateStr, modalData.hour, data);
+  sendEmailAdmin(data, selectedSpace, modalData.dateStr, modalData.hour);
+  showToast("✅ Solicitação enviada! Aguarde aprovação por e-mail.");
+  closeBooking();
+}
+
+// =================================================================
+//  ADMIN ACTIONS
+// =================================================================
+function cancelBooking(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk) return;
+  if(confirm('Cancelar reserva de "'+bk.nome+'"?')){ fbDelete(selectedSpace,ds,h); showToast("Reserva cancelada."); }
+}
+
+function approveBooking(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk) return;
+  fbUpdateStatus(selectedSpace, ds, h, "aprovado");
+  sendEmailResponse(bk, selectedSpace, ds, h, "aprovado");
+  showToast("✅ Reserva aprovada! E-mail enviado a "+bk.nome+".");
+}
+
+function rejectBooking(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk||!confirm('Recusar reserva de "'+bk.nome+'"?')) return;
+  sendEmailResponse(bk, selectedSpace, ds, h, "recusado");
+  fbDelete(selectedSpace, ds, h);
+  showToast("❌ Reserva recusada. E-mail enviado a "+bk.nome+".");
+}
+
+function showPendingAction(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk) return;
+  const a=confirm('Reserva PENDENTE\n\n👤 '+bk.nome+'\n📋 '+bk.finalidade+'\n\nClique OK para APROVAR ou Cancelar para RECUSAR.');
+  if(a) approveBooking(ds,h); else rejectBooking(ds,h);
+}
+
+// =================================================================
+//  DAY DETAIL MODAL
+// =================================================================
+function openDayDetail(ds){
+  const s=getSpace();
+  const sb=bookings[selectedSpace]||{};
+  const d=new Date(ds+"T12:00:00");
+  const dow=d.getDay()===0?6:d.getDay()-1;
+  document.getElementById("dayModalTitle").textContent=DAYS_FULL[dow]+", "+d.getDate()+" de "+MONTHS[d.getMonth()];
+  document.getElementById("dayModalSub").textContent=s.name;
+  const hours=getHours();
+  let html="";
+  hours.forEach(h=>{
+    const blocked=isBlocked(selectedSpace,dow,h);
+    const bk=sb[ds+"|"+h];
+    if(blocked){
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f0f0ed;border:1px solid #DDD;border-radius:8px;margin-bottom:4px"><span style="font-size:13px;font-weight:600;color:#999;min-width:50px">'+h+'</span><span style="font-size:12px;color:#999">'+blocked+'</span></div>';
+    } else if(bk){
+      const isPending=bk.status==="pendente";
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+(isPending?'#FFF8E1':s.color+'10')+';border:'+(isPending?'2px dashed #FFE082':'1px solid '+s.color+'25')+';border-radius:8px;margin-bottom:4px">'+
+        '<span style="font-size:13px;font-weight:600;color:'+s.color+';min-width:50px">'+h+'</span>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#333">'+bk.nome+(isPending?' <span style="color:#F57F17;font-size:10px">⏳</span>':'')+'</div>'+
+        '<div style="font-size:11px;color:#999">'+bk.mat+(bk.email?' · '+bk.email:'')+'</div>'+
+        (bk.finalidade?'<div style="font-size:11px;color:#666;font-style:italic">'+bk.finalidade+'</div>':'')+
+        '</div>'+
+        (isAdmin&&isPending?'<button class="approve-btn" onclick="approveBooking(\''+ds+'\',\''+h+'\');closeDayModal()">Aprovar</button><button class="reject-btn" onclick="rejectBooking(\''+ds+'\',\''+h+'\');closeDayModal()">Recusar</button>':'')+
+        (isAdmin&&!isPending?'<button class="list-cancel" onclick="cancelBooking(\''+ds+'\',\''+h+'\');closeDayModal()">Cancelar</button>':'')+
+      '</div>';
+    } else {
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px dashed #DDD;border-radius:8px;margin-bottom:4px;cursor:pointer" onclick="closeDayModal();setTimeout(()=>openModal(\''+ds+'\',\''+h+'\'),200)">'+
+        '<span style="font-size:13px;font-weight:600;color:#ccc;min-width:50px">'+h+'</span>'+
+        '<span style="font-size:12px;color:#ccc">Disponível — clique para reservar</span></div>';
+    }
+  });
+  document.getElementById("dayModalBody").innerHTML=html;
+  document.getElementById("dayModal").classList.add("open");
+}
+function closeDayModal(){ document.getElementById("dayModal").classList.remove("open"); }
+
+// =================================================================
+//  ADMIN MODAL
+// =================================================================
+function openAdminModal(){
+  if(isAdmin) renderAdminPanel();
+  else {
+    document.getElementById("adminTitle").textContent="Painel do Administrador";
+    document.getElementById("adminSubtitle").textContent="Faça login para gerenciar";
+    document.getElementById("adminBody").innerHTML=
+      '<label class="form-label">Senha</label>'+
+      '<input class="form-input" id="adminPass" type="password" placeholder="Senha de administrador" style="margin-bottom:16px" onkeypress="if(event.key===\'Enter\')loginAdmin()">'+
+      '<button class="submit-btn" style="background:#006B50" onclick="loginAdmin()">Entrar</button>';
+  }
+  document.getElementById("adminModal").classList.add("open");
+  setTimeout(()=>{ const p=document.getElementById("adminPass"); if(p)p.focus(); },150);
+}
+
+function loginAdmin(){
+  if(document.getElementById("adminPass").value===ADMIN_PASSWORD){
+    isAdmin=true;
+    document.getElementById("adminToggle").classList.add("active");
+    document.getElementById("adminToggle").textContent="Admin ✓";
+    renderAdminPanel();
+    render();
+  } else showToast("Senha incorreta!");
+}
+
+function renderAdminPanel(){
+  document.getElementById("adminTitle").textContent="Painel do Administrador";
+  document.getElementById("adminSubtitle").textContent="Reservas pendentes de aprovação";
+
+  // Gather pending bookings across all spaces
+  let pending=[];
+  SPACES.forEach(sp=>{
+    Object.entries(bookings[sp.id]||{}).forEach(([key,bk])=>{
+      if(bk.status==="pendente"){
+        const [ds,h]=key.split("|");
+        pending.push({spaceId:sp.id, spaceName:sp.name, color:sp.color, ds, h, bk});
+      }
+    });
+  });
+
+  let html="";
+  if(pending.length===0){
+    html='<div style="text-align:center;padding:30px;color:#aaa;font-size:14px">✅ Nenhuma reserva pendente no momento.</div>';
+  } else {
+    html='<div style="margin-bottom:12px;font-size:13px;color:#666"><strong>'+pending.length+'</strong> reserva(s) aguardando aprovação</div>';
+    pending.forEach(item=>{
+      const d=new Date(item.ds+"T12:00:00");
+      const dow=d.getDay()===0?6:d.getDay()-1;
+      html+='<div class="pending-item">'+
+        '<div class="pending-item-info">'+
+          '<div class="pending-item-name" style="color:'+item.color+'">'+item.spaceName+' — '+item.h+'</div>'+
+          '<div class="pending-item-detail">'+DAYS_FULL[dow]+', '+d.getDate()+'/'+(d.getMonth()+1)+' · '+item.bk.nome+' ('+item.bk.tipo+')</div>'+
+          '<div class="pending-item-detail">Mat: '+item.bk.mat+(item.bk.email?' · 📧 '+item.bk.email:'')+'</div>'+
+          '<div class="pending-item-finalidade">📋 '+item.bk.finalidade+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:4px;flex-shrink:0">'+
+          '<button class="approve-btn" onclick="selectedSpace=\''+item.spaceId+'\';approveBooking(\''+item.ds+'\',\''+item.h+'\');renderAdminPanel()">Aprovar</button>'+
+          '<button class="reject-btn" onclick="selectedSpace=\''+item.spaceId+'\';rejectBooking(\''+item.ds+'\',\''+item.h+'\');renderAdminPanel()">Recusar</button>'+
+        '</div>'+
+      '</div>';
+    });
+  }
+  html+='<div style="border-top:1px solid #E8E8E4;margin-top:16px;padding-top:16px">'+
+    '<button class="submit-btn" style="background:#E05050" onclick="logoutAdmin()">Sair do modo administrador</button></div>';
+  document.getElementById("adminBody").innerHTML=html;
+}
+
+function logoutAdmin(){
+  isAdmin=false;
+  document.getElementById("adminToggle").classList.remove("active");
+  document.getElementById("adminToggle").textContent="Administrador";
+  closeAdmin(); render();
+  showToast("Modo administrador desativado.");
+}
+
+function closeAdmin(){ document.getElementById("adminModal").classList.remove("open"); }
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape"){ closeBooking(); closeAdmin(); closeDayModal(); }
+});
+
+// =================================================================
+//  INIT
+// =================================================================
+if(firebaseReady){
+  initFirebaseListeners();
+} else {
+  document.getElementById("statusBar").className="status-bar offline";
+  document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
+  render();
+}
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UNIFAP Esportes — Agendamento</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F0;color:#333;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #E8E8E4;padding:16px 24px;position:sticky;top:0;z-index:100}
+.header-row{display:flex;align-items:center;justify-content:space-between;max-width:1200px;margin:0 auto}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#006B50,#00A67E);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px}
+.header-title{font-size:17px;font-weight:700;color:#1a1a1a}
+.header-sub{font-size:12px;color:#888}
+.admin-btn{font-size:12px;font-weight:600;color:#006B50;background:#E8F5EC;border:1px solid #C8E6D0;border-radius:8px;padding:8px 16px;cursor:pointer;transition:.2s}
+.admin-btn:hover{background:#D0EEDA}
+.admin-btn.active{background:#006B50;color:#fff;border-color:#006B50}
+.container{max-width:1200px;margin:0 auto;padding:16px 24px 80px}
+.status-bar{padding:8px 16px;text-align:center;font-size:12px;font-weight:600;border-radius:8px;margin-bottom:16px}
+.status-bar.online{background:#E8F5EC;color:#006B50}
+.status-bar.offline{background:#FFF3E6;color:#E07A1E}
+.space-selector{display:flex;gap:10px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px}
+.space-card{flex:1;min-width:160px;background:#fff;border:2px solid #E8E8E4;border-radius:14px;padding:14px;cursor:pointer;transition:.2s;position:relative}
+.space-card:hover{border-color:#ccc}
+.space-card.active{border-color:var(--sc)}
+.space-card .sc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px}
+.space-card .sc-name{font-size:14px;font-weight:700;color:#1a1a1a}
+.space-card .sc-info{font-size:11px;color:#999;margin-top:2px}
+.space-card .sc-extra{font-size:10px;margin-top:3px;font-weight:600}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.nav-left{display:flex;align-items:center;gap:8px}
+.nav-btn{width:32px;height:32px;border-radius:8px;border:1px solid #E0E0DC;background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.nav-btn:hover{background:#F0F0EC}
+.nav-title{font-size:15px;font-weight:700;color:#1a1a1a;min-width:180px;text-align:center}
+.nav-today{font-size:12px;font-weight:600;color:#006B50;background:#E8F5EC;border:1px solid #C8E6D0;border-radius:6px;padding:4px 12px;cursor:pointer}
+.view-toggle{display:flex;gap:2px;background:#E8E8E4;border-radius:8px;padding:2px}
+.view-btn{font-size:12px;font-weight:500;padding:6px 14px;border:none;border-radius:6px;background:transparent;cursor:pointer;color:#666;transition:.15s}
+.view-btn.active{background:#fff;color:#1a1a1a;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.stats{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.stat-card{background:#fff;border:1px solid #E8E8E4;border-radius:10px;padding:10px 16px;flex:1;min-width:100px;text-align:center}
+.stat-label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-value{font-size:22px;font-weight:800;color:#1a1a1a;line-height:1.3}
+.stat-sub{font-size:10px;color:#aaa}
+.grid-wrap{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow-x:auto}
+.grid-wrap table{width:100%;border-collapse:collapse;min-width:600px}
+.grid-wrap th{font-size:11px;font-weight:600;color:#999;padding:10px 4px;text-align:center;border-bottom:1px solid #F0F0EC;background:#FAFAF8}
+.grid-wrap th .day-label{font-size:11px}
+.grid-wrap th .day-num{font-size:13px;color:#333;font-weight:700}
+.hour-col{width:60px}
+.hour-cell{font-size:12px;font-weight:600;color:#aaa;text-align:center;padding:4px;vertical-align:top;padding-top:8px}
+.grid-wrap td{padding:2px;vertical-align:top;border-bottom:1px solid #FAFAF8}
+.slot-empty{border:1px dashed #DDD;border-radius:8px;min-height:36px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;background:#FAFAF8}
+.slot-empty span{font-size:16px;color:#CCC}
+.slot-booked{border-radius:8px;padding:5px 7px;cursor:pointer;min-height:36px;transition:.15s;position:relative}
+.slot-booked-name{font-size:10px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot-booked-id{font-size:9px;color:#999;margin-top:1px}
+.slot-blocked{background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 3px,#e8e8e4 3px,#e8e8e4 6px);border:1px solid #DDD;border-radius:8px;min-height:36px;display:flex;align-items:center;justify-content:center}
+.slot-blocked span{font-size:8px;color:#999;font-weight:600;text-align:center;line-height:1.2;padding:2px}
+.slot-pendente{border:2px dashed;border-radius:8px;padding:5px 7px;min-height:36px;position:relative;animation:pulseAnim 2s infinite}
+@keyframes pulseAnim{0%,100%{opacity:0.6}50%{opacity:1}}
+.pendente-badge{font-size:8px;font-weight:700;background:#FFF3E6;color:#E07A1E;border-radius:4px;padding:1px 4px;display:inline-block;margin-top:2px}
+.monthly-grid{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow:hidden;padding:16px}
+.month-header{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:8px}
+.month-header div{text-align:center;font-size:11px;font-weight:600;color:#999;padding:6px 0}
+.month-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.month-day{min-height:50px;border-radius:8px;border:1px solid #F0F0EC;padding:4px;cursor:pointer;transition:.15s}
+.month-day:hover{border-color:#ccc}
+.month-day .md-num{font-size:12px;font-weight:600;color:#333}
+.month-day .md-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin:1px}
+.month-day.today{border-color:#006B50;background:#E8F5EC20}
+.month-day.empty{border-color:transparent;cursor:default}
+.list-wrap{background:#fff;border:1px solid #E8E8E4;border-radius:14px;overflow:hidden;padding:16px}
+.list-empty{text-align:center;padding:40px;color:#aaa;font-size:14px}
+.list-item{display:flex;align-items:center;gap:12px;background:#FAFAF8;border:1px solid #E8E8E4;border-radius:10px;padding:10px 14px;margin-bottom:6px}
+.list-badge{width:44px;height:44px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.list-badge-day{font-size:10px;font-weight:600}
+.list-badge-hour{font-size:12px;font-weight:700}
+.list-info{flex:1;min-width:0}
+.list-info-name{font-size:13px;font-weight:600;color:#333}
+.list-info-id{font-size:11px;color:#999}
+.list-info-finalidade{font-size:11px;color:#666;font-style:italic;margin-top:2px}
+.list-cancel{font-size:11px;font-weight:500;color:#E05050;background:#FEF0F0;border:1px solid #FDDDDD;border-radius:8px;padding:6px 12px;cursor:pointer}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-box{width:14px;height:14px;border-radius:4px}
+.legend-text{font-size:11px;color:#999}
+.footer{text-align:center;padding:24px;font-size:11px;color:#bbb}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:460px;box-shadow:0 24px 48px rgba(0,0,0,0.18);overflow:hidden;max-height:90vh;overflow-y:auto}
+.modal-header{padding:20px 24px 0}
+.modal-title{font-size:18px;font-weight:700;color:#1a1a1a}
+.modal-sub{font-size:12px;color:#888;margin-top:4px}
+.modal-body{padding:16px 24px 24px}
+.form-label{font-size:12px;font-weight:600;color:#555;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 14px;border:1px solid #DDD;border-radius:10px;font-size:14px;outline:none;transition:.2s;font-family:inherit}
+.form-input:focus{border-color:#006B50;box-shadow:0 0 0 3px rgba(0,107,80,0.1)}
+.form-select{width:100%;padding:10px 14px;border:1px solid #DDD;border-radius:10px;font-size:14px;outline:none;transition:.2s;font-family:inherit;background:#fff;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.form-select:focus{border-color:#006B50;box-shadow:0 0 0 3px rgba(0,107,80,0.1)}
+.tipo-btns{display:flex;gap:6px;margin-bottom:14px}
+.tipo-btn{flex:1;padding:8px 6px;border:1px solid #DDD;border-radius:8px;background:#fff;cursor:pointer;text-align:center;font-size:12px;font-weight:500;color:#666;transition:.15s}
+.submit-btn{width:100%;padding:12px;border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;font-family:inherit}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.submit-btn:not(:disabled):hover{filter:brightness(1.1)}
+.email-box{background:#E8F4FD;border:1px solid #B8DCF0;border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.email-box-title{font-size:12px;font-weight:600;color:#0077B6;margin-bottom:4px}
+.email-box-text{font-size:12px;color:#555;line-height:1.5}
+.email-box a{color:#006B50;font-weight:700;text-decoration:none}
+.pending-box{background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.pending-box-title{font-size:12px;font-weight:600;color:#F57F17;margin-bottom:4px}
+.pending-box-text{font-size:12px;color:#555;line-height:1.5}
+.pending-item{display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed #FFE082;background:#FFF8E1;border-radius:10px;margin-bottom:8px}
+.pending-item-info{flex:1}
+.pending-item-name{font-size:14px;font-weight:600;color:#333}
+.pending-item-detail{font-size:11px;color:#888;margin-top:2px}
+.pending-item-finalidade{font-size:12px;color:#555;font-style:italic;margin-top:4px}
+.approve-btn{font-size:11px;font-weight:600;color:#fff;background:#2D8A4E;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;margin-right:4px}
+.reject-btn{font-size:11px;font-weight:600;color:#fff;background:#E05050;border:none;border-radius:6px;padding:6px 12px;cursor:pointer}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:500;z-index:2000;transition:.3s;opacity:0;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:768px){
+  .space-selector{flex-direction:column}
+  .space-card{min-width:auto}
+  .nav-bar{flex-direction:column;align-items:flex-start}
+  .stats{flex-direction:column}
+  .header-row{flex-direction:column;gap:10px;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div class="header-left">
+      <div class="header-logo">U</div>
+      <div>
+        <div class="header-title">UNIFAP Esportes</div>
+        <div class="header-sub">Sistema de Agendamento de Espaços Esportivos</div>
+      </div>
+    </div>
+    <button class="admin-btn" id="adminToggle" onclick="openAdminModal()">Administrador</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="status-bar offline" id="statusBar">Conectando...</div>
+  <div class="space-selector" id="spaceSelector"></div>
+  <div class="nav-bar">
+    <div class="nav-left">
+      <button class="nav-btn" onclick="navPrev()">&#8249;</button>
+      <div class="nav-title" id="navTitle"></div>
+      <button class="nav-btn" onclick="navNext()">&#8250;</button>
+      <button class="nav-today" onclick="navToday()">Hoje</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('week')">Semana</button>
+        <button class="view-btn" onclick="setView('month')">Mês</button>
+        <button class="view-btn" onclick="setView('list')">Lista</button>
+      </div>
+    </div>
+  </div>
+  <div class="stats" id="statsBar"></div>
+  <div id="weekView" class="grid-wrap"></div>
+  <div id="monthView" class="monthly-grid" style="display:none"></div>
+  <div id="listView" class="list-wrap" style="display:none"></div>
+  <div class="legend" id="legend"></div>
+</div>
+
+<div class="footer">UNIFAP — Universidade Federal do Amapá · Núcleo de Esportes e Lazer</div>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="bookingModal" onclick="closeBooking()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">Nova solicitação de reserva</div>
+      <div class="modal-sub" id="bookingSub"></div>
+    </div>
+    <div class="modal-body">
+      <div class="form-label">Tipo de usuário</div>
+      <div class="tipo-btns" id="tipoBtns"></div>
+      <label class="form-label" for="inputNome">Nome completo *</label>
+      <input class="form-input" id="inputNome" placeholder="Digite seu nome completo" style="margin-bottom:14px" oninput="checkForm()">
+      <label class="form-label" for="inputMat">Matrícula / Identificação *</label>
+      <input class="form-input" id="inputMat" placeholder="Ex: 2024001234" style="margin-bottom:14px" oninput="checkForm()">
+      <label class="form-label" for="inputEmail">E-mail para contato *</label>
+      <input class="form-input" id="inputEmail" type="email" placeholder="seu.email@exemplo.com" style="margin-bottom:14px" oninput="checkForm()">
+      <label class="form-label" for="inputFinalidade">Finalidade do uso *</label>
+      <select class="form-select" id="inputFinalidade" style="margin-bottom:14px" onchange="toggleFinalidadeOutra()">
+        <option value="">Selecione a finalidade...</option>
+        <option value="Treino esportivo">Treino esportivo</option>
+        <option value="Aula prática">Aula prática</option>
+        <option value="Evento acadêmico">Evento acadêmico</option>
+        <option value="Atividade recreativa">Atividade recreativa</option>
+        <option value="Competição / Campeonato">Competição / Campeonato</option>
+        <option value="Projeto de extensão">Projeto de extensão</option>
+        <option value="Treinamento de equipe">Treinamento de equipe</option>
+        <option value="Uso comunitário">Uso comunitário</option>
+        <option value="Outra">Outra (especificar)</option>
+      </select>
+      <input class="form-input" id="inputFinalidadeOutra" placeholder="Descreva a finalidade" style="margin-bottom:14px;display:none" oninput="checkForm()">
+      <div class="email-box">
+        <div class="email-box-title">📧 Precisa enviar ofício?</div>
+        <div class="email-box-text">Envie o documento por e-mail para:<br><a href="mailto:dilsonbelfort@gmail.com">dilsonbelfort@gmail.com</a></div>
+      </div>
+      <div class="pending-box">
+        <div class="pending-box-title">⏳ Aprovação necessária</div>
+        <div class="pending-box-text">Sua reserva ficará <strong>pendente</strong> até ser aprovada pelo administrador. Você receberá a confirmação no e-mail informado.</div>
+      </div>
+      <button class="submit-btn" id="submitBtn" onclick="confirmBooking()" disabled>Solicitar reserva</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="adminModal" onclick="closeAdmin()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="adminTitle">Painel do Administrador</div>
+      <div class="modal-sub" id="adminSubtitle">Faça login para gerenciar o sistema</div>
+    </div>
+    <div class="modal-body" id="adminBody"></div>
+  </div>
+</div>
+
+<!-- DAY DETAIL MODAL -->
+<div class="modal-overlay" id="dayModal" onclick="closeDayModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title" id="dayModalTitle"></div>
+      <div class="modal-sub" id="dayModalSub"></div>
+    </div>
+    <div class="modal-body" id="dayModalBody" style="max-height:50vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<script>
+// =================================================================
+//  FIREBASE
+// =================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCDhNdYmzF2GZa9JdcgT4LVf_KKw_irk8M",
+  authDomain: "unifap-agendamento.firebaseapp.com",
+  databaseURL: "https://unifap-agendamento-default-rtdb.firebaseio.com",
+  projectId: "unifap-agendamento",
+  storageBucket: "unifap-agendamento.firebasestorage.app",
+  messagingSenderId: "172401509466",
+  appId: "1:172401509466:web:d0ef2dd7a066e72c334463"
+};
+
+let db = null, firebaseReady = false;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+  firebaseReady = true;
+} catch(e) { console.error("Firebase error:", e); }
+
+// =================================================================
+//  EMAILJS
+// =================================================================
+const EMAILJS_PUBLIC_KEY        = "DMDqVG36TY6Iq-lMM";
+const EMAILJS_SERVICE_ID        = "Agendamentos Esportivos";
+const EMAILJS_TEMPLATE_ADMIN    = "template_r14fzyj";   // notifica você
+const EMAILJS_TEMPLATE_RESPONSE = "template_sxnptds";   // responde solicitante
+
+try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.error("EmailJS error:", e); }
+
+const ADMIN_EMAIL    = "dilsonbelfort@gmail.com";
+const ADMIN_PASSWORD = "unifap2024";
+
+// =================================================================
+//  SPACES & CONSTANTS
+// =================================================================
+const SPACES = [
+  {id:"quadra", name:"Quadra Poliesportiva", icon:"◆", color:"#2D8A4E", light:"#E8F5EC", cap:"20 pessoas", hours:"7h–23h", min:7,  max:22},
+  {id:"pista",  name:"Pista de Atletismo",   icon:"→", color:"#E07A1E", light:"#FFF3E6", cap:"Livre",      hours:"5h–22h", min:5,  max:22},
+  {id:"piscina",name:"Piscina",              icon:"~", color:"#0077B6", light:"#E8F4FD", cap:"30 pessoas", hours:"6h–22h", min:6,  max:22}
+];
+const MONTHS     = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DAYS_SHORT = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+const DAYS_FULL  = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+
+// =================================================================
+//  BLOCKED SLOTS
+// =================================================================
+const blockedSlots = {
+  piscina:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:6, morningEnd:12,
+    extraBlocks:[
+      {label:"Natação/Hidro (Proespol)", days:[0,1,2,3,4], startHour:17, endHour:21}
+    ]
+  },
+  pista:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:5, morningEnd:12,
+    extraBlocks:[
+      {label:"Viva Atletismo Olímp./Paral.", days:[0,2], startHour:15, endHour:17},
+      {label:"Proj. Viva Atletismo",         days:[3],   startHour:15, endHour:17}
+    ]
+  },
+  quadra:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:7, morningEnd:11,
+    extraBlocks:[
+      {label:"Inic. Esportiva Inf. (Proespol)", days:[1,3], startHour:14, endHour:18},
+      {label:"Voleibol (Proespol)",              days:[1,3], startHour:18, endHour:20},
+      {label:"Treinamento Funcional",            days:[0],   startHour:17, endHour:19},
+      {label:"Treinamento Funcional",            days:[2,4], startHour:16, endHour:18},
+      {label:"Voleibol (Proespol)",              days:[4],   startHour:18, endHour:21},
+      {label:"Voleibol (Proespol)",              days:[5],   startHour:13, endHour:16},
+      {label:"Basquete Feminino",                days:[0],   startHour:19, endHour:21},
+      {label:"Basquete Feminino",                days:[5],   startHour:16, endHour:18},
+      {label:"Basquete Masculino",               days:[2],   startHour:19, endHour:21},
+      {label:"Basquete Masculino",               days:[5],   startHour:18, endHour:20},
+      {label:"Futsal Masculino",                 days:[2],   startHour:21, endHour:23}
+    ]
+  }
+};
+
+// =================================================================
+//  STATE
+// =================================================================
+let selectedSpace = "quadra";
+let currentView   = "week";
+let isAdmin       = false;
+let today         = new Date();
+let viewDate      = new Date();
+let modalData     = null;
+let formTipo      = "aluno";
+let bookings      = {piscina:{}, pista:{}, quadra:{}};
+
+// =================================================================
+//  FIREBASE LISTENERS
+// =================================================================
+function initFirebaseListeners() {
+  SPACES.forEach(sp => {
+    db.ref("bookings/" + sp.id).on("value", snapshot => {
+      const data = snapshot.val();
+      bookings[sp.id] = {};
+      if (data) {
+        Object.keys(data).forEach(dk => {
+          const ds = dk.replace(/_/g, "-");
+          const hours = data[dk];
+          if (hours && typeof hours === "object") {
+            Object.keys(hours).forEach(hk => {
+              bookings[sp.id][ds + "|" + hk.replace(/_/g, ":")] = hours[hk];
+            });
+          }
+        });
+      }
+      render();
+    });
+  });
+  db.ref(".info/connected").on("value", snap => {
+    const bar = document.getElementById("statusBar");
+    if (snap.val()) {
+      bar.className = "status-bar online";
+      bar.textContent = "Conectado — dados em tempo real";
+    } else {
+      bar.className = "status-bar offline";
+      bar.textContent = "Desconectado — reconectando...";
+    }
+  });
+}
+
+function fbSave(spId, ds, h, data) {
+  if (firebaseReady) {
+    db.ref("bookings/"+spId+"/"+ds.replace(/-/g,"_")+"/"+h.replace(/:/g,"_")).set(data);
+  } else {
+    bookings[spId][ds+"|"+h] = data;
+    render();
+  }
+}
+
+function fbDelete(spId, ds, h) {
+  if (firebaseReady) {
+    db.ref("bookings/"+spId+"/"+ds.replace(/-/g,"_")+"/"+h.replace(/:/g,"_")).remove();
+  } else {
+    delete bookings[spId][ds+"|"+h];
+    render();
+  }
+}
+
+function fbUpdateStatus(spId, ds, h, status) {
+  if (firebaseReady) {
+    db.ref("bookings/"+spId+"/"+ds.replace(/-/g,"_")+"/"+h.replace(/:/g,"_")+"/status").set(status);
+  } else {
+    if (bookings[spId][ds+"|"+h]) { bookings[spId][ds+"|"+h].status = status; render(); }
+  }
+}
+
+// =================================================================
+//  EMAIL
+// =================================================================
+function sendEmailAdmin(bk, spId, ds, h) {
+  const sp = SPACES.find(s => s.id === spId);
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ADMIN, {
+    to_email:   ADMIN_EMAIL,
+    nome:       bk.nome,
+    espaco:     sp ? sp.name : spId,
+    data:       ds,
+    hora:       h,
+    finalidade: bk.finalidade || "Não informada",
+    matricula:  bk.mat,
+    tipo:       bk.tipo,
+    email:      bk.email
+  }).then(() => console.log("E-mail admin enviado"))
+    .catch(err => console.error("Erro e-mail admin:", err));
+}
+
+function sendEmailResponse(bk, spId, ds, h, status) {
+  if (!bk.email) return;
+  const sp = SPACES.find(s => s.id === spId);
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_RESPONSE, {
+    to_email:   bk.email,
+    nome:       bk.nome,
+    espaco:     sp ? sp.name : spId,
+    data:       ds,
+    hora:       h,
+    finalidade: bk.finalidade || "Não informada",
+    matricula:  bk.mat,
+    status:     status === "aprovado" ? "APROVADA ✅" : "RECUSADA ❌",
+    email:      bk.email
+  }).then(() => console.log("E-mail resposta enviado para " + bk.email))
+    .catch(err => console.error("Erro e-mail resposta:", err));
+}
+
+// =================================================================
+//  HELPERS
+// =================================================================
+function getSpace() { return SPACES.find(s => s.id === selectedSpace); }
+
+function getWeekDates() {
+  const day = viewDate.getDay();
+  const mon = new Date(viewDate);
+  mon.setDate(viewDate.getDate() - (day === 0 ? 6 : day - 1));
+  return Array.from({length:7}, (_, i) => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; });
+}
+
+function fmtDate(d) {
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function isBlocked(spId, dow, hour) {
+  const blk = blockedSlots[spId];
+  if (!blk) return null;
+  const hr = parseInt(hour);
+  if (blk.morningBlock && hr >= blk.morningStart && hr < blk.morningEnd) return blk.morningLabel;
+  if (blk.extraBlocks) {
+    for (const eb of blk.extraBlocks) {
+      if (eb.days.includes(dow) && hr >= eb.startHour && hr < eb.endHour) return eb.label;
+    }
+  }
+  return null;
+}
+
+function getHours(spId) {
+  const sp = SPACES.find(s => s.id === (spId||selectedSpace));
+  return Array.from({length: sp.max - sp.min + 1}, (_, i) => String(sp.min+i).padStart(2,"0")+":00");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+// =================================================================
+//  RENDER
+// =================================================================
+function render() {
+  renderSpaceSelector();
+  renderNav();
+  renderStats();
+  renderWeekView();
+  renderMonthView();
+  renderListView();
+  renderLegend();
+  updateViewVisibility();
+}
+
+function renderSpaceSelector() {
+  document.getElementById("spaceSelector").innerHTML = SPACES.map(sp => {
+    const active = sp.id === selectedSpace;
+    let extra = "";
+    if (sp.id==="quadra")  extra='<div class="sc-extra" style="color:#E07A1E">Ed. Física + Voleibol + Funcional</div>';
+    if (sp.id==="piscina") extra='<div class="sc-extra" style="color:#E07A1E">Ed. Física + Natação/Hidro</div>';
+    if (sp.id==="pista")   extra='<div class="sc-extra" style="color:#E07A1E">Ed. Física + Viva Atletismo</div>';
+    return '<div class="space-card'+(active?' active':'')+'" style="--sc:'+sp.color+';'+(active?'border-color:'+sp.color:'')+'" onclick="selectSpace(\''+sp.id+'\')">'+
+      '<div class="sc-icon" style="background:'+sp.light+';color:'+sp.color+'">'+sp.icon+'</div>'+
+      '<div class="sc-name">'+sp.name+'</div>'+
+      '<div class="sc-info">'+sp.cap+' · '+sp.hours+'</div>'+extra+'</div>';
+  }).join("");
+}
+
+function renderNav() {
+  const el = document.getElementById("navTitle");
+  if (currentView === "month") {
+    el.textContent = MONTHS[viewDate.getMonth()]+" "+viewDate.getFullYear();
+  } else {
+    const dates = getWeekDates();
+    const f = dates[0], l = dates[6];
+    if (f.getMonth()===l.getMonth())
+      el.textContent = f.getDate()+" – "+l.getDate()+" de "+MONTHS[f.getMonth()]+" "+f.getFullYear();
+    else
+      el.textContent = f.getDate()+" "+MONTHS[f.getMonth()].substring(0,3)+" – "+l.getDate()+" "+MONTHS[l.getMonth()].substring(0,3)+" "+l.getFullYear();
+  }
+}
+
+function renderStats() {
+  const s = getSpace();
+  const sb = bookings[selectedSpace]||{};
+  const hours = getHours();
+  const dates = getWeekDates();
+  let blocked=0, booked=0, pending=0;
+  dates.forEach((dt,i) => {
+    hours.forEach(h => {
+      if (isBlocked(selectedSpace,i,h)) blocked++;
+      else {
+        const bk = sb[fmtDate(dt)+"|"+h];
+        if (bk) { if (bk.status==="pendente") pending++; else booked++; }
+      }
+    });
+  });
+  const avail = 7*hours.length - blocked - booked - pending;
+  const occ   = (7*hours.length-blocked)>0 ? Math.round(((booked+pending)/(7*hours.length-blocked))*100) : 0;
+  let html = '<div class="stat-card"><div class="stat-label">Disponíveis</div><div class="stat-value" style="color:#2D8A4E">'+avail+'</div><div class="stat-sub">horários livres</div></div>'+
+    '<div class="stat-card"><div class="stat-label">Reservados</div><div class="stat-value" style="color:'+s.color+'">'+booked+'</div><div class="stat-sub">confirmados</div></div>';
+  if (pending>0) html+='<div class="stat-card"><div class="stat-label">Pendentes</div><div class="stat-value" style="color:#F57F17">'+pending+'</div><div class="stat-sub">aguardando aprovação</div></div>';
+  if (blocked>0) html+='<div class="stat-card"><div class="stat-label">Bloqueados</div><div class="stat-value" style="color:#E07A1E">'+blocked+'</div><div class="stat-sub">uso institucional</div></div>';
+  html+='<div class="stat-card"><div class="stat-label">Ocupação</div><div class="stat-value">'+occ+'%</div><div class="stat-sub">da semana</div></div>';
+  document.getElementById("statsBar").innerHTML = html;
+}
+
+function renderWeekView() {
+  const s = getSpace();
+  const dates = getWeekDates();
+  const hours = getHours();
+  const sb = bookings[selectedSpace]||{};
+  const todayStr = fmtDate(today);
+  let html = '<table><thead><tr><th class="hour-col">Hora</th>';
+  dates.forEach((dt,i) => {
+    const isT = fmtDate(dt)===todayStr;
+    html+='<th><div class="day-label">'+DAYS_SHORT[i]+'</div><div class="day-num" style="'+(isT?'color:#006B50':'')+'">'+dt.getDate()+'</div></th>';
+  });
+  html+='</tr></thead><tbody>';
+  hours.forEach(hour => {
+    html+='<tr><td class="hour-cell">'+hour+'</td>';
+    dates.forEach((dt,i) => {
+      const ds = fmtDate(dt);
+      const blocked = isBlocked(selectedSpace,i,hour);
+      const key = ds+"|"+hour;
+      const bk = sb[key];
+      if (blocked) {
+        html+='<td><div class="slot-blocked"><span>'+blocked+'</span></div></td>';
+      } else if (bk) {
+        if (bk.status==="pendente") {
+          html+='<td><div class="slot-pendente" style="border-color:'+s.color+'50;background:'+s.color+'08;" '+(isAdmin?'onclick="showPendingAction(\''+ds+'\',\''+hour+'\')"':'')+' title="'+bk.nome+' — PENDENTE'+(isAdmin?' (clique para gerenciar)':'')+'">'
+            +'<div class="slot-booked-name" style="color:'+s.color+'">'+bk.nome+'</div>'
+            +'<div class="pendente-badge">⏳ Pendente</div>'
+          +'</div></td>';
+        } else {
+          html+='<td><div class="slot-booked" style="background:'+s.color+'14;border:1px solid '+s.color+'30;" '+(isAdmin?'onclick="cancelBooking(\''+ds+'\',\''+hour+'\')"':'')+' title="'+bk.nome+' — '+bk.mat+(isAdmin?' (clique para cancelar)':'')+'">'
+            +'<div class="slot-booked-name" style="color:'+s.color+'">'+bk.nome+'</div>'
+            +'<div class="slot-booked-id">'+bk.mat+'</div>'
+          +'</div></td>';
+        }
+      } else {
+        html+='<td><div class="slot-empty" onclick="openModal(\''+ds+'\',\''+hour+'\')" onmouseenter="this.style.background=\''+s.light+'\';this.style.borderColor=\''+s.color+'60\'" onmouseleave="this.style.background=\'#FAFAF8\';this.style.borderColor=\'#DDD\'"><span>+</span></div></td>';
+      }
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById("weekView").innerHTML = html;
+}
+
+function renderMonthView() {
+  const s = getSpace();
+  const sb = bookings[selectedSpace]||{};
+  const year=viewDate.getFullYear(), month=viewDate.getMonth();
+  const firstDay=new Date(year,month,1);
+  let startDow = firstDay.getDay()===0?6:firstDay.getDay()-1;
+  const lastDay=new Date(year,month+1,0).getDate();
+  const todayStr=fmtDate(today);
+  let html='<div class="month-header">'+DAYS_SHORT.map(d=>'<div>'+d+'</div>').join('')+'</div><div class="month-days">';
+  for(let i=0;i<startDow;i++) html+='<div class="month-day empty"></div>';
+  for(let d=1;d<=lastDay;d++){
+    const dt=new Date(year,month,d);
+    const ds=fmtDate(dt);
+    const isT=ds===todayStr;
+    let dots="", count=0, pend=0;
+    getHours().forEach(h=>{
+      const bk=sb[ds+"|"+h];
+      if(bk){if(bk.status==="pendente")pend++;else count++;}
+    });
+    if(count>0) dots+='<span class="md-dot" style="background:'+s.color+'"></span>';
+    if(pend>0)  dots+='<span class="md-dot" style="background:#F57F17"></span>';
+    html+='<div class="month-day'+(isT?' today':'')+'" onclick="openDayDetail(\''+ds+'\')"><div class="md-num">'+d+'</div><div>'+dots+'</div></div>';
+  }
+  html+='</div>';
+  document.getElementById("monthView").innerHTML=html;
+}
+
+function renderListView() {
+  const s=getSpace();
+  const sb=bookings[selectedSpace]||{};
+  const dates=getWeekDates();
+  let items=[];
+  dates.forEach((dt,i)=>{
+    const ds=fmtDate(dt);
+    getHours().forEach(h=>{
+      const bk=sb[ds+"|"+h];
+      if(bk) items.push({ds,h,bk,dow:DAYS_SHORT[i]});
+    });
+  });
+  if(items.length===0){
+    document.getElementById("listView").innerHTML='<div class="list-empty">Nenhuma reserva esta semana.</div>';
+    return;
+  }
+  document.getElementById("listView").innerHTML=items.map(item=>{
+    const isPending=item.bk.status==="pendente";
+    return '<div class="list-item" style="'+(isPending?'border:2px dashed #FFE082;background:#FFF8E1':'')+'">'+
+      '<div class="list-badge" style="background:'+s.light+'">'+
+        '<div class="list-badge-day" style="color:'+s.color+'">'+item.dow+'</div>'+
+        '<div class="list-badge-hour" style="color:'+s.color+'">'+item.h+'</div>'+
+      '</div>'+
+      '<div class="list-info">'+
+        '<div class="list-info-name">'+item.bk.nome+(isPending?' <span style="color:#F57F17;font-size:10px">⏳ PENDENTE</span>':'')+'</div>'+
+        '<div class="list-info-id">'+item.bk.mat+(item.bk.email?' · '+item.bk.email:'')+'</div>'+
+        (item.bk.finalidade?'<div class="list-info-finalidade">'+item.bk.finalidade+'</div>':'')+
+      '</div>'+
+      (isAdmin&&isPending?'<button class="approve-btn" onclick="approveBooking(\''+item.ds+'\',\''+item.h+'\')">Aprovar</button><button class="reject-btn" onclick="rejectBooking(\''+item.ds+'\',\''+item.h+'\')">Recusar</button>':'')+
+      (isAdmin&&!isPending?'<button class="list-cancel" onclick="cancelBooking(\''+item.ds+'\',\''+item.h+'\')">Cancelar</button>':'')+
+    '</div>';
+  }).join("");
+}
+
+function renderLegend() {
+  const s=getSpace();
+  let html='<div class="legend-item"><div class="legend-box" style="border:1px dashed #DDD;background:#FAFAF8"></div><span class="legend-text">Disponível</span></div>'+
+    '<div class="legend-item"><div class="legend-box" style="background:'+s.color+'20;border:1px solid '+s.color+'30"></div><span class="legend-text">Reservado (aprovado)</span></div>'+
+    '<div class="legend-item"><div class="legend-box" style="border:2px dashed '+s.color+'50;background:'+s.color+'08"></div><span class="legend-text">Pendente (aguardando aprovação)</span></div>'+
+    '<div class="legend-item"><div class="legend-box" style="background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 3px,#e8e8e4 3px,#e8e8e4 6px);border:1px solid #DDD"></div><span class="legend-text">Bloqueado (uso institucional)</span></div>';
+  document.getElementById("legend").innerHTML=html;
+}
+
+function updateViewVisibility() {
+  document.getElementById("weekView").style.display  = currentView==="week"  ? "block":"none";
+  document.getElementById("monthView").style.display = currentView==="month" ? "block":"none";
+  document.getElementById("listView").style.display  = currentView==="list"  ? "block":"none";
+  document.querySelectorAll(".view-btn").forEach(btn=>{
+    const map={Semana:"week",Mês:"month",Lista:"list"};
+    btn.classList.toggle("active", map[btn.textContent]===currentView);
+  });
+}
+
+// =================================================================
+//  NAVIGATION
+// =================================================================
+function selectSpace(id){ selectedSpace=id; render(); }
+function setView(v){ currentView=v; render(); }
+function navPrev(){ if(currentView==="month") viewDate.setMonth(viewDate.getMonth()-1); else viewDate.setDate(viewDate.getDate()-7); render(); }
+function navNext(){ if(currentView==="month") viewDate.setMonth(viewDate.getMonth()+1); else viewDate.setDate(viewDate.getDate()+7); render(); }
+function navToday(){ viewDate=new Date(); render(); }
+
+// =================================================================
+//  BOOKING MODAL
+// =================================================================
+function isMonthAllowed(ds) {
+  const d = new Date(ds+"T12:00:00");
+  const now = new Date();
+  const bookYear  = d.getFullYear();
+  const bookMonth = d.getMonth();
+  let maxYear  = now.getFullYear();
+  let maxMonth = now.getMonth();
+  if (now.getDate() >= 15) {
+    maxMonth++;
+    if (maxMonth > 11) { maxMonth = 0; maxYear++; }
+  }
+  if (bookYear > maxYear) return false;
+  if (bookYear === maxYear && bookMonth > maxMonth) return false;
+  return true;
+}
+
+function openModal(ds, hour) {
+  const key=ds+"|"+hour;
+  if ((bookings[selectedSpace]||{})[key]) return;
+  if (!isMonthAllowed(ds)) {
+    showToast("Agendamento para este mês ainda não está liberado. Liberação a partir do dia 15 do mês anterior.");
+    return;
+  }
+  modalData={dateStr:ds, hour};
+  formTipo="aluno";
+  ["inputNome","inputMat","inputEmail"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("inputFinalidade").value="";
+  document.getElementById("inputFinalidadeOutra").value="";
+  document.getElementById("inputFinalidadeOutra").style.display="none";
+  const s=getSpace();
+  const d=new Date(ds+"T12:00:00");
+  const dow=d.getDay()===0?6:d.getDay()-1;
+  document.getElementById("bookingSub").textContent=s.name+" · "+DAYS_FULL[dow]+", "+d.getDate()+" de "+MONTHS[d.getMonth()]+" · "+hour;
+  document.getElementById("submitBtn").style.background=s.color;
+  document.getElementById("submitBtn").disabled=true;
+  renderTipoBtns();
+  document.getElementById("bookingModal").classList.add("open");
+  setTimeout(()=>document.getElementById("inputNome").focus(),150);
+}
+
+function closeBooking(){ document.getElementById("bookingModal").classList.remove("open"); modalData=null; }
+
+function renderTipoBtns(){
+  const s=getSpace();
+  document.getElementById("tipoBtns").innerHTML=[["aluno","Aluno"],["servidor","Servidor"],["comunidade","Comunidade"]].map(([v,l])=>
+    '<div class="tipo-btn'+(v===formTipo?' active':'')+'" style="'+(v===formTipo?'border-color:'+s.color+';background:'+s.color+';color:#fff':'')+'" onclick="setTipo(\''+v+'\')">'+l+'</div>'
+  ).join("");
+}
+
+function setTipo(t){ formTipo=t; renderTipoBtns(); }
+
+function toggleFinalidadeOutra(){
+  const sel=document.getElementById("inputFinalidade").value;
+  document.getElementById("inputFinalidadeOutra").style.display=sel==="Outra"?"block":"none";
+  checkForm();
+}
+
+function checkForm(){
+  const n=document.getElementById("inputNome").value.trim();
+  const m=document.getElementById("inputMat").value.trim();
+  const e=document.getElementById("inputEmail").value.trim();
+  const f=document.getElementById("inputFinalidade").value;
+  const fo=document.getElementById("inputFinalidadeOutra").value.trim();
+  const emailOk=e&&e.includes("@")&&e.includes(".");
+  const finalOk=f&&(f!=="Outra"||fo);
+  document.getElementById("submitBtn").disabled=!(n&&m&&emailOk&&finalOk);
+}
+
+function confirmBooking(){
+  const n=document.getElementById("inputNome").value.trim();
+  const m=document.getElementById("inputMat").value.trim();
+  const e=document.getElementById("inputEmail").value.trim();
+  let f=document.getElementById("inputFinalidade").value;
+  if(f==="Outra") f=document.getElementById("inputFinalidadeOutra").value.trim();
+  if(!n||!m||!e||!f||!modalData) return;
+  const data={nome:n, mat:m, email:e, tipo:formTipo, finalidade:f, status:"pendente", timestamp:Date.now()};
+  fbSave(selectedSpace, modalData.dateStr, modalData.hour, data);
+  sendEmailAdmin(data, selectedSpace, modalData.dateStr, modalData.hour);
+  showToast("✅ Solicitação enviada! Aguarde aprovação por e-mail.");
+  closeBooking();
+}
+
+// =================================================================
+//  ADMIN ACTIONS
+// =================================================================
+function cancelBooking(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk) return;
+  if(confirm('Cancelar reserva de "'+bk.nome+'"?')){ fbDelete(selectedSpace,ds,h); showToast("Reserva cancelada."); }
+}
+
+function approveBooking(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk) return;
+  fbUpdateStatus(selectedSpace, ds, h, "aprovado");
+  sendEmailResponse(bk, selectedSpace, ds, h, "aprovado");
+  showToast("✅ Reserva aprovada! E-mail enviado a "+bk.nome+".");
+}
+
+function rejectBooking(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk||!confirm('Recusar reserva de "'+bk.nome+'"?')) return;
+  sendEmailResponse(bk, selectedSpace, ds, h, "recusado");
+  fbDelete(selectedSpace, ds, h);
+  showToast("❌ Reserva recusada. E-mail enviado a "+bk.nome+".");
+}
+
+function showPendingAction(ds, h){
+  if(!isAdmin) return;
+  const bk=(bookings[selectedSpace]||{})[ds+"|"+h];
+  if(!bk) return;
+  const a=confirm('Reserva PENDENTE\n\n👤 '+bk.nome+'\n📋 '+bk.finalidade+'\n\nClique OK para APROVAR ou Cancelar para RECUSAR.');
+  if(a) approveBooking(ds,h); else rejectBooking(ds,h);
+}
+
+// =================================================================
+//  DAY DETAIL MODAL
+// =================================================================
+function openDayDetail(ds){
+  const s=getSpace();
+  const sb=bookings[selectedSpace]||{};
+  const d=new Date(ds+"T12:00:00");
+  const dow=d.getDay()===0?6:d.getDay()-1;
+  document.getElementById("dayModalTitle").textContent=DAYS_FULL[dow]+", "+d.getDate()+" de "+MONTHS[d.getMonth()];
+  document.getElementById("dayModalSub").textContent=s.name;
+  const hours=getHours();
+  let html="";
+  hours.forEach(h=>{
+    const blocked=isBlocked(selectedSpace,dow,h);
+    const bk=sb[ds+"|"+h];
+    if(blocked){
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f0f0ed;border:1px solid #DDD;border-radius:8px;margin-bottom:4px"><span style="font-size:13px;font-weight:600;color:#999;min-width:50px">'+h+'</span><span style="font-size:12px;color:#999">'+blocked+'</span></div>';
+    } else if(bk){
+      const isPending=bk.status==="pendente";
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+(isPending?'#FFF8E1':s.color+'10')+';border:'+(isPending?'2px dashed #FFE082':'1px solid '+s.color+'25')+';border-radius:8px;margin-bottom:4px">'+
+        '<span style="font-size:13px;font-weight:600;color:'+s.color+';min-width:50px">'+h+'</span>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#333">'+bk.nome+(isPending?' <span style="color:#F57F17;font-size:10px">⏳</span>':'')+'</div>'+
+        '<div style="font-size:11px;color:#999">'+bk.mat+(bk.email?' · '+bk.email:'')+'</div>'+
+        (bk.finalidade?'<div style="font-size:11px;color:#666;font-style:italic">'+bk.finalidade+'</div>':'')+
+        '</div>'+
+        (isAdmin&&isPending?'<button class="approve-btn" onclick="approveBooking(\''+ds+'\',\''+h+'\');closeDayModal()">Aprovar</button><button class="reject-btn" onclick="rejectBooking(\''+ds+'\',\''+h+'\');closeDayModal()">Recusar</button>':'')+
+        (isAdmin&&!isPending?'<button class="list-cancel" onclick="cancelBooking(\''+ds+'\',\''+h+'\');closeDayModal()">Cancelar</button>':'')+
+      '</div>';
+    } else {
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px dashed #DDD;border-radius:8px;margin-bottom:4px;cursor:pointer" onclick="closeDayModal();setTimeout(()=>openModal(\''+ds+'\',\''+h+'\'),200)">'+
+        '<span style="font-size:13px;font-weight:600;color:#ccc;min-width:50px">'+h+'</span>'+
+        '<span style="font-size:12px;color:#ccc">Disponível — clique para reservar</span></div>';
+    }
+  });
+  document.getElementById("dayModalBody").innerHTML=html;
+  document.getElementById("dayModal").classList.add("open");
+}
+function closeDayModal(){ document.getElementById("dayModal").classList.remove("open"); }
+
+// =================================================================
+//  ADMIN MODAL
+// =================================================================
+function openAdminModal(){
+  if(isAdmin) renderAdminPanel();
+  else {
+    document.getElementById("adminTitle").textContent="Painel do Administrador";
+    document.getElementById("adminSubtitle").textContent="Faça login para gerenciar";
+    document.getElementById("adminBody").innerHTML=
+      '<label class="form-label">Senha</label>'+
+      '<input class="form-input" id="adminPass" type="password" placeholder="Senha de administrador" style="margin-bottom:16px" onkeypress="if(event.key===\'Enter\')loginAdmin()">'+
+      '<button class="submit-btn" style="background:#006B50" onclick="loginAdmin()">Entrar</button>';
+  }
+  document.getElementById("adminModal").classList.add("open");
+  setTimeout(()=>{ const p=document.getElementById("adminPass"); if(p)p.focus(); },150);
+}
+
+function loginAdmin(){
+  if(document.getElementById("adminPass").value===ADMIN_PASSWORD){
+    isAdmin=true;
+    document.getElementById("adminToggle").classList.add("active");
+    document.getElementById("adminToggle").textContent="Admin ✓";
+    renderAdminPanel();
+    render();
+  } else showToast("Senha incorreta!");
+}
+
+function renderAdminPanel(){
+  document.getElementById("adminTitle").textContent="Painel do Administrador";
+  document.getElementById("adminSubtitle").textContent="Reservas pendentes de aprovação";
+
+  // Gather pending bookings across all spaces
+  let pending=[];
+  SPACES.forEach(sp=>{
+    Object.entries(bookings[sp.id]||{}).forEach(([key,bk])=>{
+      if(bk.status==="pendente"){
+        const [ds,h]=key.split("|");
+        pending.push({spaceId:sp.id, spaceName:sp.name, color:sp.color, ds, h, bk});
+      }
+    });
+  });
+
+  let html="";
+  if(pending.length===0){
+    html='<div style="text-align:center;padding:30px;color:#aaa;font-size:14px">✅ Nenhuma reserva pendente no momento.</div>';
+  } else {
+    html='<div style="margin-bottom:12px;font-size:13px;color:#666"><strong>'+pending.length+'</strong> reserva(s) aguardando aprovação</div>';
+    pending.forEach(item=>{
+      const d=new Date(item.ds+"T12:00:00");
+      const dow=d.getDay()===0?6:d.getDay()-1;
+      html+='<div class="pending-item">'+
+        '<div class="pending-item-info">'+
+          '<div class="pending-item-name" style="color:'+item.color+'">'+item.spaceName+' — '+item.h+'</div>'+
+          '<div class="pending-item-detail">'+DAYS_FULL[dow]+', '+d.getDate()+'/'+(d.getMonth()+1)+' · '+item.bk.nome+' ('+item.bk.tipo+')</div>'+
+          '<div class="pending-item-detail">Mat: '+item.bk.mat+(item.bk.email?' · 📧 '+item.bk.email:'')+'</div>'+
+          '<div class="pending-item-finalidade">📋 '+item.bk.finalidade+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:4px;flex-shrink:0">'+
+          '<button class="approve-btn" onclick="selectedSpace=\''+item.spaceId+'\';approveBooking(\''+item.ds+'\',\''+item.h+'\');renderAdminPanel()">Aprovar</button>'+
+          '<button class="reject-btn" onclick="selectedSpace=\''+item.spaceId+'\';rejectBooking(\''+item.ds+'\',\''+item.h+'\');renderAdminPanel()">Recusar</button>'+
+        '</div>'+
+      '</div>';
+    });
+  }
+  html+='<div style="border-top:1px solid #E8E8E4;margin-top:16px;padding-top:16px">'+
+    '<button class="submit-btn" style="background:#E05050" onclick="logoutAdmin()">Sair do modo administrador</button></div>';
+  document.getElementById("adminBody").innerHTML=html;
+}
+
+function logoutAdmin(){
+  isAdmin=false;
+  document.getElementById("adminToggle").classList.remove("active");
+  document.getElementById("adminToggle").textContent="Administrador";
+  closeAdmin(); render();
+  showToast("Modo administrador desativado.");
+}
+
+function closeAdmin(){ document.getElementById("adminModal").classList.remove("open"); }
+
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape"){ closeBooking(); closeAdmin(); closeDayModal(); }
+});
+
+// =================================================================
+//  INIT
+// =================================================================
+if(firebaseReady){
+  initFirebaseListeners();
+} else {
+  document.getElementById("statusBar").className="status-bar offline";
+  document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
+  render();
+}
+</script>
+</body>
+</html>
