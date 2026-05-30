@@ -352,11 +352,34 @@ let viewDate=new Date();
 let modalData=null;
 let formTipo="aluno";
 
-let blockedSlots={
-  piscina:{morningBlock:false,extraBlocks:[{label:"Ed. Física",days:[0,2],startHour:6,endHour:12},{label:"Natação/Hidro (Proespol)",days:[0,1,2,3,4],startHour:17,endHour:21}]},
-  pista:{morningBlock:false,extraBlocks:[{label:"Ed. Física",days:[0,2],startHour:5,endHour:12},{label:"Viva Atletismo Olímp./Paral.",days:[0,2],startHour:15,endHour:19},{label:"Proj. Viva Atletismo",days:[3],startHour:15,endHour:19}]},
-  quadra:{morningBlock:true,morningLabel:"Ed. Física",morningStart:7,morningEnd:13,extraBlocks:[{label:"Inic. Esportiva Inf. (Proespol)",days:[1,3],startHour:14,endHour:18},{label:"Voleibol (Proespol)",days:[1,3],startHour:18,endHour:20},{label:"Treinamento Funcional",days:[0],startHour:16,endHour:19},{label:"Treinamento Funcional",days:[2],startHour:16,endHour:19},{label:"Treinamento Funcional",days:[4],startHour:16,endHour:18},{label:"Voleibol (Proespol)",days:[4],startHour:18,endHour:21},{label:"Voleibol (Proespol)",days:[5],startHour:13,endHour:16},{label:"Basquete Feminino",days:[0],startHour:19,endHour:21},{label:"Basquete Feminino",days:[5],startHour:16,endHour:18},{label:"Basquete Masculino",days:[2],startHour:19,endHour:21},{label:"Basquete Masculino",days:[5],startHour:18,endHour:20},{label:"Futsal Masculino",days:[2],startHour:22,endHour:23}]}
+let blockedSlots = {
+  piscina:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:6, morningEnd:12,
+    extraBlocks:[
+      { label:"Natação/Hidro (Proespol)", days:[0,1,2,3,4], startHour:17, endHour:21 }
+    ]
+  },
+  pista:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:5, morningEnd:12,
+    extraBlocks:[
+      { label:"Viva Atletismo Olímp./Paral.", days:[0,2], startHour:15, endHour:17 },
+      { label:"Proj. Viva Atletismo", days:[3], startHour:15, endHour:17 }
+    ]
+  },
+  quadra:{
+    morningBlock:true, morningLabel:"Ed. Física", morningStart:7, morningEnd:11,
+    extraBlocks:[
+      { label:"Inic. Esportiva Inf. (Proespol)", days:[1,3], startHour:14, endHour:18 },
+      { label:"Voleibol (Proespol)", days:[1,3], startHour:18, endHour:20 },
+      { label:"Treinamento Funcional", days:[0], startHour:17, endHour:19 },
+      { label:"Treinamento Funcional", days:[2,4], startHour:16, endHour:18 },
+      { label:"Voleibol (Proespol)", days:[4], startHour:18, endHour:21 },
+      { label:"Voleibol (Proespol)", days:[5], startHour:13, endHour:16 }
+    ]
+  }
 };
+
+let bookings = { piscina:{}, pista:{}, quadra:{} };
 
 // =================================================================
 //  FIREBASE SYNC
