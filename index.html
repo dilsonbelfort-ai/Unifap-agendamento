@@ -52,6 +52,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F5F5F0;color:#333;m
 .grid-wrap td{padding:2px;vertical-align:top;border-bottom:1px solid #FAFAF8}
 .slot-empty{border:1px dashed #DDD;border-radius:8px;min-height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;background:#FAFAF8}
 .slot-empty span{font-size:16px;color:#CCC}
+.slot-locked{border:1px solid #DDD;border-radius:8px;min-height:36px;cursor:not-allowed;display:flex;align-items:center;justify-content:center;background:#EDEDE8}
+.slot-locked span{font-size:14px;opacity:.6}
 .slot-booked{border-radius:8px;padding:5px 7px;min-height:36px;cursor:pointer}
 .slot-booked-name{font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .slot-booked-id{font-size:9px;color:#999;margin-top:1px}
@@ -584,20 +586,28 @@ function renderWeek() {
     html+='<tr><td class="hour-cell">'+hour+'</td>';
     dates.forEach(function(dt,i){
       var ds=fmtDate(dt), bl=isBlocked(selSpace,i,hour), key=ds+"|"+hour, bk=sb[key];
+      var isPast = ds < fmtDate(today);
       if(bl){
         html+='<td><div class="slot-blocked"><span>'+bl+'</span></div></td>';
       } else if(bk){
         if(bk.status==="pendente"){
-          html+='<td><div class="slot-pendente" style="border-color:'+s.color+'50;background:'+s.color+'08;" '+(isAdmin?'onclick="showPendingAction(\''+ds+'\',\''+hour+'\')"':'')+'">';
+          html+='<td><div class="slot-pendente" style="border-color:'+s.color+'50;background:'+s.color+'08;'+(isPast?'opacity:.5;':'')+'" '+(isAdmin&&!isPast?'onclick="showPendingAction(\''+ds+'\',\''+hour+'\')"':'')+'">';
           html+='<div class="slot-booked-name" style="color:'+s.color+'">'+bk.nome+'</div>';
           html+='<div class="pendente-badge">⏳ Pendente</div></div></td>';
         } else {
-          html+='<td><div class="slot-booked" style="background:'+s.color+'14;border:1px solid '+s.color+'30;" '+(isAdmin?'onclick="cancelBooking(\''+ds+'\',\''+hour+'\')"':'')+'">';
+          html+='<td><div class="slot-booked" style="background:'+s.color+'14;border:1px solid '+s.color+'30;'+(isPast?'opacity:.5;':'')+'" '+(isAdmin&&!isPast?'onclick="cancelBooking(\''+ds+'\',\''+hour+'\')"':'')+'">';
           html+='<div class="slot-booked-name" style="color:'+s.color+'">'+bk.nome+'</div>';
           html+='<div class="slot-booked-id">'+bk.mat+'</div></div></td>';
         }
+      } else if(isPast){
+        // Dia passado: slot visual normal mas sem clique
+        html+='<td><div class="slot-empty" style="cursor:default;opacity:.4"><span>+</span></div></td>';
       } else {
-        html+='<td><div class="slot-empty" onclick="openModal(\''+ds+'\',\''+hour+'\')" onmouseenter="this.style.background=\''+s.light+'\';this.style.borderColor=\''+s.color+'60\'" onmouseleave="this.style.background=\'#FAFAF8\';this.style.borderColor=\'#DDD\'"><span>+</span></div></td>';
+        if(!isMonthAllowed(ds)){
+          html+='<td><div class="slot-locked" onclick="showToast(\'🔒 Agendamento liberado a partir do dia 15 do mês anterior\')"><span>🔒</span></div></td>';
+        } else {
+          html+='<td><div class="slot-empty" onclick="openModal(\''+ds+'\',\''+hour+'\')" onmouseenter="this.style.background=\''+s.light+'\';this.style.borderColor=\''+s.color+'60\'" onmouseleave="this.style.background=\'#FAFAF8\';this.style.borderColor=\'#DDD\'"><span>+</span></div></td>';
+        }
       }
     });
     html+='</tr>';
@@ -663,6 +673,7 @@ function renderLegend() {
     '<div class="legend-item"><div class="legend-box" style="border:1px dashed #DDD;background:#FAFAF8"></div><span class="legend-text">Disponível</span></div>'+
     '<div class="legend-item"><div class="legend-box" style="background:'+s.color+'20;border:1px solid '+s.color+'30"></div><span class="legend-text">Reservado</span></div>'+
     '<div class="legend-item"><div class="legend-box" style="border:2px dashed '+s.color+'50;background:'+s.color+'08"></div><span class="legend-text">Pendente</span></div>'+
+    '<div class="legend-item"><div class="legend-box" style="background:#EDEDE8;border:1px solid #DDD;display:flex;align-items:center;justify-content:center;font-size:9px">🔒</div><span class="legend-text">Aguardando liberação (após dia 15)</span></div>'+
     '<div class="legend-item"><div class="legend-box" style="background:repeating-linear-gradient(135deg,#f0f0ed,#f0f0ed 3px,#e8e8e4 3px,#e8e8e4 6px);border:1px solid #DDD"></div><span class="legend-text">Bloqueado</span></div>';
 }
 
