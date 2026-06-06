@@ -346,12 +346,13 @@ function initFirebaseListeners() {
       bookings[sp.id] = {};
       if (data) {
         Object.keys(data).forEach(dk => {
-          // converte 2026_05_04 → 2026-05-04
-          const ds = dk.replace(/_/g, "-");
+          // converte 2026_05_04 → 2026-05-04, garantindo zeros à esquerda
+          const dateParts = dk.split("_");
+          const ds = dateParts[0] + "-" + (dateParts[1]||"01").padStart(2,"0") + "-" + (dateParts[2]||"01").padStart(2,"0");
           const hoursObj = data[dk];
           if (hoursObj && typeof hoursObj === "object") {
             Object.keys(hoursObj).forEach(hk => {
-              // converte 07_00 → 07:00, preservando zero à esquerda
+              // converte 07_00 → 07:00, garantindo zeros à esquerda
               const parts = hk.split("_");
               const hourStr = parts[0].padStart(2,"0") + ":" + (parts[1]||"00").padStart(2,"0");
               bookings[sp.id][ds + "|" + hourStr] = hoursObj[hk];
