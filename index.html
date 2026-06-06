@@ -923,16 +923,31 @@ document.addEventListener("keydown", e=>{
 // =================================================================
 //  INIT
 // =================================================================
-// Renderiza grade imediatamente
+// Renderiza grade vazia imediatamente para mostrar a estrutura
 render();
 
-// Inicia Firebase listeners
+// Inicia Firebase — o listener chama render() novamente com os dados
 if (firebaseReady) {
   initFirebaseListeners();
+  // Fallback: se o listener demorar mais de 5s, mostra offline
+  setTimeout(function() {
+    const bar = document.getElementById("statusBar");
+    if (bar && bar.classList.contains("offline")) {
+      bar.textContent = "Sem conexão com o servidor";
+    }
+  }, 5000);
 } else {
-  document.getElementById("statusBar").className="status-bar offline";
-  document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
+  document.getElementById("statusBar").className = "status-bar offline";
+  document.getElementById("statusBar").textContent = "Modo local — Firebase não conectado";
 }
+
+// Debug: loga estado após 2 segundos
+setTimeout(function() {
+  console.log("firebaseReady:", firebaseReady);
+  console.log("bookings quadra keys:", Object.keys(bookings.quadra).length);
+  console.log("selectedSpace:", selectedSpace);
+  console.log("spaceSelector innerHTML length:", document.getElementById("spaceSelector").innerHTML.length);
+}, 2000);
 </script>
 </body>
 </html>
