@@ -483,14 +483,14 @@ function showToast(msg) {
 //  RENDER
 // =================================================================
 function render() {
-  renderSpaceSelector();
-  renderNav();
-  renderStats();
-  renderWeekView();
-  renderMonthView();
-  renderListView();
-  renderLegend();
-  updateViewVisibility();
+  try { renderSpaceSelector(); } catch(e) { console.error("renderSpaceSelector:", e); }
+  try { renderNav(); } catch(e) { console.error("renderNav:", e); }
+  try { renderStats(); } catch(e) { console.error("renderStats:", e); }
+  try { renderWeekView(); } catch(e) { console.error("renderWeekView:", e); }
+  try { renderMonthView(); } catch(e) { console.error("renderMonthView:", e); }
+  try { renderListView(); } catch(e) { console.error("renderListView:", e); }
+  try { renderLegend(); } catch(e) { console.error("renderLegend:", e); }
+  try { updateViewVisibility(); } catch(e) { console.error("updateViewVisibility:", e); }
 }
 
 function renderSpaceSelector() {
