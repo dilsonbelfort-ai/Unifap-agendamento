@@ -344,11 +344,15 @@ function initFirebaseListeners() {
       bookings[sp.id] = {};
       if (data) {
         Object.keys(data).forEach(dk => {
+          // converte 2026_05_04 → 2026-05-04
           const ds = dk.replace(/_/g, "-");
-          const hours = data[dk];
-          if (hours && typeof hours === "object") {
-            Object.keys(hours).forEach(hk => {
-              bookings[sp.id][ds + "|" + hk.replace(/_/g, ":")] = hours[hk];
+          const hoursObj = data[dk];
+          if (hoursObj && typeof hoursObj === "object") {
+            Object.keys(hoursObj).forEach(hk => {
+              // converte 07_00 → 07:00, preservando zero à esquerda
+              const parts = hk.split("_");
+              const hourStr = parts[0].padStart(2,"0") + ":" + (parts[1]||"00").padStart(2,"0");
+              bookings[sp.id][ds + "|" + hourStr] = hoursObj[hk];
             });
           }
         });
