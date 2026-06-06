@@ -921,12 +921,14 @@ document.addEventListener("keydown", e=>{
 // =================================================================
 //  INIT
 // =================================================================
+// Renderiza imediatamente com dados vazios para a grade aparecer
+render();
+
 if(firebaseReady){
   initFirebaseListeners();
 } else {
   document.getElementById("statusBar").className="status-bar offline";
   document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
-  render();
 }
 </script>
 </body>
