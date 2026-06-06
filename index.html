@@ -257,9 +257,11 @@ const firebaseConfig = {
 
 let db = null, firebaseReady = false;
 try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.database();
-  firebaseReady = true;
+  if (typeof firebase !== "undefined") {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    firebaseReady = true;
+  }
 } catch(e) { console.error("Firebase error:", e); }
 
 // =================================================================
@@ -270,7 +272,7 @@ const EMAILJS_SERVICE_ID        = "Agendamentos Esportivos";
 const EMAILJS_TEMPLATE_ADMIN    = "template_r14fzyj";   // notifica você
 const EMAILJS_TEMPLATE_RESPONSE = "template_sxnptds";   // responde solicitante
 
-try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.error("EmailJS error:", e); }
+try { if (typeof emailjs !== "undefined") emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.error("EmailJS error:", e); }
 
 const ADMIN_EMAIL    = "dilsonbelfort@gmail.com";
 const ADMIN_PASSWORD = "unifap2024";
@@ -921,15 +923,30 @@ document.addEventListener("keydown", e=>{
 // =================================================================
 //  INIT
 // =================================================================
-// Renderiza imediatamente com dados vazios para a grade aparecer
-render();
-
-if(firebaseReady){
-  initFirebaseListeners();
-} else {
-  document.getElementById("statusBar").className="status-bar offline";
-  document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
-}
+// Inicializa após todos os scripts externos carregarem
+window.addEventListener("load", function() {
+  // Tenta Firebase novamente se ainda não iniciado
+  if (!firebaseReady && typeof firebase !== "undefined") {
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+      firebaseReady = true;
+    } catch(e) { console.error("Firebase retry error:", e); }
+  }
+  // Tenta EmailJS novamente
+  if (typeof emailjs !== "undefined") {
+    try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) {}
+  }
+  // Renderiza grade inicial
+  render();
+  // Inicia listeners Firebase
+  if (firebaseReady) {
+    initFirebaseListeners();
+  } else {
+    document.getElementById("statusBar").className="status-bar offline";
+    document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
+  }
+});
 </script>
 </body>
 </html>
