@@ -127,6 +127,9 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
   .header-row{flex-direction:column;gap:10px;align-items:flex-start}
 }
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -236,10 +239,6 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#F5F5F
 </div>
 
 <div class="toast" id="toast"></div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <script>
 // =================================================================
@@ -924,30 +923,16 @@ document.addEventListener("keydown", e=>{
 // =================================================================
 //  INIT
 // =================================================================
-// Inicializa após todos os scripts externos carregarem
-window.addEventListener("load", function() {
-  // Tenta Firebase novamente se ainda não iniciado
-  if (!firebaseReady && typeof firebase !== "undefined") {
-    try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.database();
-      firebaseReady = true;
-    } catch(e) { console.error("Firebase retry error:", e); }
-  }
-  // Tenta EmailJS novamente
-  if (typeof emailjs !== "undefined") {
-    try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) {}
-  }
-  // Renderiza grade inicial
-  render();
-  // Inicia listeners Firebase
-  if (firebaseReady) {
-    initFirebaseListeners();
-  } else {
-    document.getElementById("statusBar").className="status-bar offline";
-    document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
-  }
-});
+// Renderiza grade imediatamente
+render();
+
+// Inicia Firebase listeners
+if (firebaseReady) {
+  initFirebaseListeners();
+} else {
+  document.getElementById("statusBar").className="status-bar offline";
+  document.getElementById("statusBar").textContent="Modo local — Firebase não conectado";
+}
 </script>
 </body>
 </html>
