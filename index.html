@@ -134,6 +134,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#F5F5F0;color:#333;m
 </div>
 <div class="container">
   <div class="status-bar offline" id="statusBar">Conectando...</div>
+<div id="debugPanel" style="background:#1a1a1a;color:#0f0;padding:10px;font-family:monospace;font-size:11px;border-radius:8px;margin-bottom:12px;white-space:pre-wrap"></div>
   <div class="space-selector" id="spaceSelector"></div>
   <div class="nav-bar">
     <div class="nav-left">
@@ -321,10 +322,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // Listeners Firebase
   if (fbReady) {
+    debugLog("Firebase OK - iniciando listeners para " + SPACES.length + " espacos");
     SPACES.forEach(function(sp) {
       db.ref("bookings/" + sp.id).on("value", function(snapshot) {
         bookings[sp.id] = {};
         var data = snapshot.val();
+        debugLog("Listener " + sp.id + " disparou. data=" + (data ? "SIM ("+Object.keys(data).length+" datas)" : "VAZIO"));
         if (data) {
           Object.keys(data).forEach(function(dk) {
             var dp = dk.split("_");
@@ -339,6 +342,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
           });
         }
+        debugLog("  → bookings."+sp.id+" agora tem " + Object.keys(bookings[sp.id]).length + " entradas. Re-renderizando...");
         render();
       });
     });
@@ -420,6 +424,13 @@ function isMonthAllowed(ds) {
   return true;
 }
 
+function debugLog(msg) {
+  var p = document.getElementById("debugPanel");
+  if (!p) return;
+  var ts = new Date().toLocaleTimeString();
+  p.textContent = "[" + ts + "] " + msg + "\n" + p.textContent.split("\n").slice(0,8).join("\n");
+}
+
 function showToast(msg) {
   var t = document.getElementById("toast");
   t.textContent = msg;
@@ -431,8 +442,11 @@ function showToast(msg) {
 function fbSave(spId, ds, h, data) {
   var dk = ds.replace(/-/g,"_");
   var hk = h.replace(/:/g,"_");
+  debugLog("SALVANDO: " + spId + "/" + dk + "/" + hk);
   if (fbReady) {
-    db.ref("bookings/"+spId+"/"+dk+"/"+hk).set(data);
+    db.ref("bookings/"+spId+"/"+dk+"/"+hk).set(data)
+      .then(function(){ debugLog("  ✓ Salvo no Firebase"); })
+      .catch(function(err){ debugLog("  ✗ ERRO: " + err.message); });
   } else {
     bookings[spId][ds+"|"+h] = data;
     render();
